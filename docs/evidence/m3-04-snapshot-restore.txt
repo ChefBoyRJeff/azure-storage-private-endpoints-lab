@@ -1,0 +1,37 @@
+=== M3d: share snapshot (portal), simulated data loss, restore ===
+snapshot taken in portal: 
+incident 1: delete finance/report.txt exit=0
+incident 2: overwrite finance/budget.txt exit=0
+live share now: budget.txt
+budget.txt now: CORRUPTED by mistake 2026-11-03T17:43:22.1827039-05:00
+read budget.txt from snapshot exit=2
+restore budget.txt (CLI) exit=1
+--- after restore ---
+live share: budget.txt, report.txt
+report.txt : P7 M3 important report v1, 2026-11-03T17:36:00.8712871-05:00
+budget.txt : CORRUPTED by mistake 2026-11-03T17:43:22.1827039-05:00
+read budget.txt from snapshot exit=2
+restore budget.txt (CLI) exit=1
+--- after restore ---
+live share: budget.txt, report.txt
+report.txt : P7 M3 important report v1, 2026-11-03T17:36:00.8712871-05:00
+budget.txt : CORRUPTED by mistake 2026-11-03T17:43:22.1827039-05:00
+NOTE: snapshot line above is blank because the JMESPath '| [-1]' broke under az.cmd (cmd.exe pipe). Snapshot did exist (portal restore of report.txt succeeded). CLI restore retried below.
+snapshot: 
+read budget.txt from snapshot exit=2
+restore budget.txt (CLI) exit=1
+--- after restore (retry) ---
+report.txt : P7 M3 important report v1, 2026-11-03T17:36:00.8712871-05:00
+budget.txt : CORRUPTED by mistake 2026-11-03T17:43:22.1827039-05:00
+--- diagnostic: raw share listings (no filter) ---
+data plane:
+control plane:
+  name=labshare snapshotTime=11/03/2026 22:43:10
+  name=labshare snapshotTime=
+NOTE: data-plane 'share list --include-snapshot' returned nothing (error suppressed); control plane share-rm lists the snapshot. Using share-rm raw snapshotTime.
+snapshot: 2026-11-03T22:43:10.0000000Z
+read budget.txt from snapshot exit=0
+restore budget.txt (CLI) exit=0
+--- after restore (retry 2) ---
+report.txt : P7 M3 important report v1, 2026-11-03T17:36:00.8712871-05:00
+budget.txt : P7 M3 budget sheet, 2026-11-03T17:36:00.8937284-05:00

@@ -1,0 +1,18 @@
+=== M3b: file share labshare (portal), files uploaded over HTTPS REST ===
+set quota 1 GiB exit=0
+{
+  "name": "labshare",
+  "protocol": "SMB",
+  "quotaGiB": 1,
+  "tier": "TransactionOptimized"
+}
+mkdir finance exit=0
+upload finance/report.txt exit=0
+upload finance/budget.txt exit=0
+Name        Bytes
+----------  -------
+budget.txt  55
+report.txt  62
+--- resource types in rg-storage-lab (expect only the storage account: no Recovery Services vault) ---
+Microsoft.Storage/storageAccounts
+Microsoft.RecoveryServices/vaults

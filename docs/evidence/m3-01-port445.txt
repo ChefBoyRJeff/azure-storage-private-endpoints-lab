@@ -1,0 +1,4 @@
+=== M3a: outbound TCP 445 from the lab workstation to the account's file endpoint ===
+TCP 445 to <account>.file.core.windows.net: TcpTestSucceeded = False; name resolved = True
+TCP 443 to the same endpoint: TcpTestSucceeded = True
+FINDING: DNS resolves and 443 reaches the file endpoint, but 445 is blocked outbound from this network (typical ISP block of SMB). Not an Azure fault. SMB mount moved to the M4 Azure VM (445 stays inside Azure); M3 share/snapshot/restore done over HTTPS (portal + REST).

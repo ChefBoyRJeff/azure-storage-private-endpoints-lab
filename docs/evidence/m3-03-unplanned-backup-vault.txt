@@ -1,0 +1,39 @@
+=== M3 incident: Recovery Services vault found in rg-storage-lab after share creation (Backup left enabled in the portal wizard) ===
+vault: vault-mw19i8iy
+--- protected items ---
+Share     State
+--------  ---------
+labshare  IRPending
+--- backup policy schedule ---
+Name
+--------------------
+HourlyLogBackup
+DefaultPolicy
+DailyPolicy-mw19i8s4
+EnhancedPolicy
+--- vault soft delete state ---
+--- locks in rg-storage-lab ---
+Name                       Level         Notes
+-------------------------  ------------  ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+AzureBackupProtectionLock  CanNotDelete  Auto-created by Azure Backup for storage accounts registered with a Recovery Services Vault. This lock is intended to guard against deletion of backups due to accidental deletion of the storage account.
+--- share snapshots on labshare ---
+--- remediation ---
+soft delete before: ,Enabled
+
+ERROR: (BMSUserErrorDisablingSoftDeleteStateNotAllowed) Disabling soft delete or enhanced security state is not allowed for this vault. Please contact Microsoft Support if this is not expected.
+Code: BMSUserErrorDisablingSoftDeleteStateNotAllowed
+
+1 soft delete off exit=1
+2 stop protection + delete data exit=0
+
+ERROR: (CloudInternalError) Microsoft Azure Backup encountered an internal error. Wait for a few minutes and then try the operation again. If the issue persists, please contact Microsoft support.
+Code: CloudInternalError
+Message: Microsoft Azure Backup encountered an internal error. Wait for a few minutes and then try the operation again. If the issue persists, please contact Microsoft support.
+
+3 unregister storage account exit=1
+4 lock already gone (removed by unregister)
+5 delete vault exit=0
+--- verify ---
+resource types: Microsoft.Storage/storageAccounts
+locks: 
+labshare still present with files: budget.txt, report.txt
