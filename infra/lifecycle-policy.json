@@ -1,0 +1,20 @@
+{
+  "rules": [
+    {
+      "enabled": true,
+      "name": "lab-lifecycle-to-cool",
+      "type": "Lifecycle",
+      "definition": {
+        "actions": {
+          "baseBlob": {
+            "tierToCool": { "daysAfterModificationGreaterThan": 0 }
+          }
+        },
+        "filters": {
+          "blobTypes": [ "blockBlob" ],
+          "prefixMatch": [ "lifecycle/" ]
+        }
+      }
+    }
+  ]
+}

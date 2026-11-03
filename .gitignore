@@ -1,6 +1,8 @@
 # Compiled ARM output (generated from Bicep; never committed)
 *.json
 !bicepconfig.json
+# Hand-written policy definitions are source, not compiled output
+!infra/lifecycle-policy.json
 
 # Local parameter files: hold real values such as the budget alert email. Never commit.
 *.local.bicepparam
