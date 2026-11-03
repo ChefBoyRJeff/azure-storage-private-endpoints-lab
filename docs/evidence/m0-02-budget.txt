@@ -1,0 +1,9 @@
+=== M0: budget (code), rg-storage-lab created in the portal ===
+rg: eastus	azure-storage-private-endpoints-lab
+infra/budget.local.bicepparam
+deploy exit=0
+{
+  "amount": "5.0",
+  "name": "budget-storage-pe-lab",
+  "timeGrain": "Monthly"
+}

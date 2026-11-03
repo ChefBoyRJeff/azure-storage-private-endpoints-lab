@@ -1,0 +1,27 @@
+=== M0: P1 hub-and-spoke network, live state (read-only), 2026-11-03 10:47 ===
+resources in rg-hubspoke-lab:
+  Microsoft.Network/virtualNetworks  vnet-hub
+  Microsoft.Network/networkSecurityGroups  nsg-spoke1-workload
+  Microsoft.Network/routeTables  rt-spoke1-workload
+  Microsoft.Network/virtualNetworks  vnet-spoke1
+  Microsoft.Network/networkSecurityGroups  nsg-spoke2-workload
+  Microsoft.Network/routeTables  rt-spoke2-workload
+  Microsoft.Network/virtualNetworks  vnet-spoke2
+--- VNets, subnets, service endpoints, NSG/route table, private endpoint policies ---
+  vnet-hub  10.0.0.0/16
+     snet-shared    10.0.1.0/26    nsg= rt= serviceEndpoints= pePolicies=Disabled
+     GatewaySubnet  10.0.2.0/27    nsg= rt= serviceEndpoints= pePolicies=Disabled
+  vnet-spoke1  10.1.0.0/16
+     snet-workload  10.1.1.0/25    nsg=nsg-spoke1-workload rt=rt-spoke1-workload serviceEndpoints= pePolicies=Disabled
+  vnet-spoke2  10.2.0.0/16
+     snet-workload  10.2.1.0/25    nsg=nsg-spoke2-workload rt=rt-spoke2-workload serviceEndpoints= pePolicies=Disabled
+--- peerings ---
+  vnet-hub: peer-hub-to-spoke1 state=Connected sync=FullyInSync
+  vnet-hub: peer-hub-to-spoke2 state=Connected sync=FullyInSync
+  vnet-spoke1: peer-spoke1-to-hub state=Connected sync=FullyInSync
+  vnet-spoke2: peer-spoke2-to-hub state=Connected sync=FullyInSync
+--- route tables ---
+  rt-spoke1-workload: Default-To-Hub-NVA 0.0.0.0/0 -> VirtualAppliance 10.0.1.4
+  rt-spoke2-workload: Default-To-Hub-NVA 0.0.0.0/0 -> VirtualAppliance 10.0.1.4
+--- private DNS zones in subscription ---
+  count: 0

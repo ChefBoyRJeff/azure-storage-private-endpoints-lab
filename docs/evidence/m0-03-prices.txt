@@ -1,0 +1,45 @@
+=== M0: providers and prices (Retail Prices API, eastus), 2026-11-03 ===
+Microsoft.Storage : Registered
+Microsoft.Network : Registered
+Microsoft.Compute : Registered
+--- Blob storage, LRS, Hot/Cool/Cold/Archive data stored ---
+--- Azure Files ---
+--- Private endpoint ---
+--- Private DNS ---
+--- B1s VM (Linux) ---
+NOTE: first attempt returned no prices: my filter used $_.priceType, but the response field is 'type' (priceType is only the request filter name). Rerun below.
+--- Blob storage, LRS data stored by tier ---
+  General Block Blob v2 | Archive LRS Data Stored | 0.00099 per 1 GB/Month
+  General Block Blob v2 | Cold LRS Data Stored | 0.0036 per 1 GB/Month
+  General Block Blob v2 | Hot LRS Data Stored | 0.0208 per 1 GB/Month
+  General Block Blob v2 | Hot LRS Data Stored | 0.019968 per 1 GB/Month
+  General Block Blob v2 | Hot LRS Data Stored | 0.019136 per 1 GB/Month
+  General Block Blob v2 | Cool LRS Data Stored | 0.0152 per 1 GB/Month
+--- Azure Files ---
+  Files v2 | LRS Data Stored | 0.06 per 1 GB/Month
+  Files v2 | Hot LRS Data Stored | 0.0287 per 1 GB/Month
+  Files v2 | Cool LRS Data Stored | 0.0228 per 1 GB/Month
+--- Private endpoint ---
+  (no match) products seen: 
+--- Private DNS ---
+  Azure DNS | Private Record Set | 0 per 1
+  Azure DNS | Private Record Set | 0.0015 per 1
+  Azure DNS | Private Zone | 0.5 per 1
+  Azure DNS | Private Zone | 0.1 per 1
+  Azure DNS | Private Resolver DNS Forwarding Ruleset | 2.5 per 1
+  Azure DNS | Private Record Set | 0 per 1
+  Azure DNS | Private Record Set | 0.0015 per 1
+  Azure DNS | Private Queries | 0.4 per 1M
+--- B1s VM ---
+  Virtual Machines BS Series Windows | B1s | 0.014 per 1 Hour
+  Virtual Machines BS Series | B1s | 0.0104 per 1 Hour
+--- Private endpoint (rerun: product name 'Virtual Network Private Link' matched nothing; searching by meter name) ---
+  Azure Container Apps / Azure Container Apps | Environment Private Endpoint | 0.1 per 1 Hour
+  Storage / Blob Features | Private Endpoint Premium Data Processed | 0.004 per 1 GB
+  Storage / Blob Features | Private Endpoint Premium Hour Enabled | 0.5 per 1
+--- Private endpoint (rerun 2: no region filter; the eastus results above are other products, not the standard PE) ---
+  Virtual Network / Virtual Network Private Link | Standard Private Endpoint | region='attatlanta1' location='ATT Atlanta 1' | 0.01 per 1 Hour
+  Virtual Network / Virtual Network Private Link | Standard Private Endpoint | region='attdallas1' location='ATT Dallas 1' | 0.01 per 1 Hour
+  Virtual Network / Virtual Network Private Link | Standard Private Endpoint | region='sgxsingapore1' location='SGX Singapore 1' | 0.01 per 1 Hour
+  Virtual Network / Virtual Network Private Link | Standard Private Endpoint | region='US Gov' location='US Gov' | 0.0125 per 1 Hour
+  Virtual Network / Virtual Network Private Link | Standard Private Endpoint | region='Global' location='Global' | 0.01 per 1 Hour
