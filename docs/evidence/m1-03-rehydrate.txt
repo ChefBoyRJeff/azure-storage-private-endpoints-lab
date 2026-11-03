@@ -1,0 +1,27 @@
+=== M1c: rehydrate archive.txt in place to Hot, High priority (changed in the portal) ===
+poll start 2026-11-03 11:16:43 local, immediately after portal Save
+11:16:45  +  0.0 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:18:48  +  2.1 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:20:50  +  4.1 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:22:52  +  6.2 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:24:54  +  8.2 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:26:56  + 10.2 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:28:58  + 12.3 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:31:01  + 14.3 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:33:03  + 16.3 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:35:05  + 18.4 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:37:07  + 20.4 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:39:10  + 22.4 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:41:12  + 24.5 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:43:15  + 26.5 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:45:17  + 28.6 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:47:19  + 30.6 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:49:22  + 32.6 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:51:24  + 34.7 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:53:26  + 36.7 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:55:29  + 38.8 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:57:31  + 40.8 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+11:59:33  + 42.8 min  tier=Archive  status=rehydrate-pending-to-hot  priority=
+12:01:35  + 44.9 min  tier=Hot  status=  priority=
+--- read content after rehydration ---
+exit=0; content: P7 M1 synthetic test file, tier Archive, 2026-11-03T11:12:51.3486193-05:00

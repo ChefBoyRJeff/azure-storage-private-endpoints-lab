@@ -1,0 +1,63 @@
+=== M1b: upload with tier set at write time (auth-mode key; Entra data roles are M2) ===
+upload Hot exit=0
+upload Cool exit=0
+upload Cold exit=0
+upload Archive exit=0
+upload move-me (no tier) exit=0
+--- tiers after upload ---
+Name         Tier     Inferred
+-----------  -------  ----------
+archive.txt  Archive
+cold.txt     Cold
+cool.txt     Cool
+hot.txt      Hot
+move-me.txt  Hot      True
+--- after portal tier change on move-me.txt ---
+Name         Tier     TierChanged
+-----------  -------  -------------------------
+archive.txt  Archive  2026-11-03T16:12:59+00:00
+cold.txt     Cold     2026-11-03T16:12:57+00:00
+cool.txt     Cool     2026-11-03T16:12:55+00:00
+hot.txt      Hot      2026-11-03T16:12:53+00:00
+move-me.txt  Cold     2026-11-03T16:13:50+00:00
+--- read cool.txt content (expect success) ---
+WARNING: 
+There are no credentials provided in your command and environment, we will query for account key for your storage account.
+It is recommended to provide --connection-string, --account-key or --sas-token in your command as credentials.
+
+You also can add `--auth-mode login` in your command to use Azure Active Directory (Azure AD) for authorization if your login account is assigned required RBAC roles.
+For more information about RBAC roles in storage, visit https://learn.microsoft.com/azure/storage/common/storage-auth-aad-rbac-cli.
+
+In addition, setting the corresponding environment variables can avoid inputting credentials in your command. Please use --help to get more information about environment variable usage.
+
+Alive[################################################################]  100.0000%
+Finished[#############################################################]  100.0000%
+exit=0; content: P7 M1 synthetic test file, tier Cool, 2026-11-03T11:12:51.3466751-05:00
+--- read archive.txt PROPERTIES (expect success: metadata stays online) ---
+WARNING: 
+There are no credentials provided in your command and environment, we will query for account key for your storage account.
+It is recommended to provide --connection-string, --account-key or --sas-token in your command as credentials.
+
+You also can add `--auth-mode login` in your command to use Azure Active Directory (Azure AD) for authorization if your login account is assigned required RBAC roles.
+For more information about RBAC roles in storage, visit https://learn.microsoft.com/azure/storage/common/storage-auth-aad-rbac-cli.
+
+In addition, setting the corresponding environment variables can avoid inputting credentials in your command. Please use --help to get more information about environment variable usage.
+{
+  "lastModified": "2026-11-03T16:12:59+00:00",
+  "size": 76,
+  "tier": "Archive"
+}
+--- read archive.txt CONTENT (planned failure: expect BlobArchived) ---
+WARNING: 
+There are no credentials provided in your command and environment, we will query for account key for your storage account.
+It is recommended to provide --connection-string, --account-key or --sas-token in your command as credentials.
+
+You also can add `--auth-mode login` in your command to use Azure Active Directory (Azure AD) for authorization if your login account is assigned required RBAC roles.
+For more information about RBAC roles in storage, visit https://learn.microsoft.com/azure/storage/common/storage-auth-aad-rbac-cli.
+
+In addition, setting the corresponding environment variables can avoid inputting credentials in your command. Please use --help to get more information about environment variable usage.
+ERROR: This operation is not permitted on an archived blob.
+RequestId:<redacted>
+Time:2026-11-03T16:14:25.2028529Z
+ErrorCode:BlobArchived
+exit=1

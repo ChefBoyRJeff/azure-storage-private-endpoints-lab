@@ -1,0 +1,22 @@
+=== M1d: versioning (overwrite) and soft delete (delete), recovered in the portal ===
+overwrite hot.txt exit=0
+delete cool.txt exit=0
+create container scratch exit=0
+delete container scratch exit=0
+--- versions after the mistakes (current=True is the live blob) ---
+Name      Version                       Current
+--------  ----------------------------  ---------
+cool.txt  2026-11-03T16:12:55.6702250Z
+hot.txt   2026-11-03T16:12:53.4560704Z
+hot.txt   2026-11-03T18:52:29.4968313Z  True
+--- after portal recovery ---
+Name      Version                       Current
+--------  ----------------------------  ---------
+cool.txt  2026-11-03T16:12:55.6702250Z
+cool.txt  2026-11-03T18:54:54.5158064Z  True
+hot.txt   2026-11-03T16:12:53.4560704Z
+hot.txt   2026-11-03T18:52:29.4968313Z
+hot.txt   2026-11-03T18:53:51.1087419Z  True
+hot.txt content: P7 M1 synthetic test file, tier Hot, 2026-11-03T11:12:51.3448040-05:00
+cool.txt exit=0 content: P7 M1 synthetic test file, tier Cool, 2026-11-03T11:12:51.3466751-05:00
+container scratch exists: true

@@ -1,0 +1,29 @@
+=== M1a: storage account created in the portal, 2026-11-03 11:07 ===
+{
+  "anonBlob": false,
+  "hns": null,
+  "httpsOnly": true,
+  "kind": "StorageV2",
+  "name": "stpelabjj1103",
+  "publicNet": "Enabled",
+  "sharedKey": true,
+  "sku": "Standard_LRS",
+  "tag": "azure-storage-private-endpoints-lab",
+  "tier": "Hot",
+  "tls": "TLS1_2"
+}
+{
+  "blobSoftDelete": {
+    "allowPermanentDelete": false,
+    "days": 7,
+    "enabled": true
+  },
+  "changeFeed": null,
+  "containerSoftDelete": {
+    "allowPermanentDelete": null,
+    "days": 7,
+    "enabled": true
+  },
+  "pitr": null,
+  "versioning": true
+}

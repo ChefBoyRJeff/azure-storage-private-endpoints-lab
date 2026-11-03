@@ -1,0 +1,22 @@
+=== M1e: lifecycle rule (portal) moving lifecycle/ blobs to Cool after 0 days ===
+create container lifecycle exit=0
+upload lc-test.txt exit=0 at 2026-11-03 13:57 local
+--- policy as stored ---
+[
+  {
+    "enabled": true,
+    "name": "lab-lifecycle-to-cool",
+    "prefix": [
+      "lifecycle/"
+    ],
+    "toCool": null,
+    "types": [
+      "blockBlob"
+    ]
+  }
+]
+--- lc-test.txt tier now (expect Hot; the rule hasn't run yet) ---
+{
+  "inferred": true,
+  "tier": "Hot"
+}
