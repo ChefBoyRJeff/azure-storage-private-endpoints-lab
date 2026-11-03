@@ -19,3 +19,17 @@ workstation data plane back: 0 blobs
 CORRECTION: the zone-list line above ran as 'list--query' (merged paste) so its blank result proves nothing; and 0 blobs was right after re-enabling public access. Re-checks:
 private DNS zones in subscription (count): 0
 workstation data plane back: 0 blobs
+--- diagnosis: data plane still refused after re-enable ---
+{
+  "bypass": "AzureServices",
+  "defaultAction": "Deny",
+  "ipRules": [],
+  "publicNetworkAccess": "Enabled",
+  "vnetRules": []
+}
+ERROR: 
+The request may be blocked by network rules of storage account. Please check network rule set using 'az storage account show -n accountname --query networkRuleSet'.
+If you want to change the default action to apply when no rule matches, please use 'az storage account update'.
+fix: default action Allow exit=0
+workstation data plane back: 5 blobs
+FINDING: re-enabling publicNetworkAccess alone left networkRuleSet.defaultAction=Deny (set when public access was disabled), i.e. 'selected networks' with no rules; data plane stayed blocked until defaultAction=Allow. Teardown/rollback must restore both settings.
