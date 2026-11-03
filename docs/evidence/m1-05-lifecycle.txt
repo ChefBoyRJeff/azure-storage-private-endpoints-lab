@@ -20,3 +20,26 @@ upload lc-test.txt exit=0 at 2026-11-03 13:57 local
   "inferred": true,
   "tier": "Hot"
 }
+--- full actions block (toCool came back null above; checking the raw policy) ---
+{
+  "baseBlob": {
+    "delete": null,
+    "enableAutoTierToHotFromCool": null,
+    "tierToArchive": null,
+    "tierToCold": {
+      "daysAfterCreationGreaterThan": null,
+      "daysAfterLastAccessTimeGreaterThan": null,
+      "daysAfterLastTierChangeGreaterThan": null,
+      "daysAfterModificationGreaterThan": 0.0
+    },
+    "tierToCool": null,
+    "tierToHot": null
+  },
+  "snapshot": null,
+  "version": null
+}
+FINDING: rule saved tierToCold although named and intended to-cool (portal dropdown choice); edited in the portal to Cool. Re-check:
+{
+  "toCold": 0.0,
+  "toCool": null
+}
