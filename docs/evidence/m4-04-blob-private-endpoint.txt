@@ -1,0 +1,43 @@
+=== M4d: blob private endpoint + private DNS zone (portal) ===
+{
+  "fqdn": null,
+  "group": "blob",
+  "ip": null,
+  "name": "pe-stpelab-blob",
+  "state": "Approved",
+  "subnet": "/subscriptions/<guid>/resourceGroups/rg-hubspoke-lab/providers/Microsoft.Network/virtualNetworks/vnet-spoke1/subnets/snet-workload"
+}
+--- private DNS zone: A records ---
+Name           Ip        Ttl
+-------------  --------  -----
+stpelabjj1103  10.1.1.5  10
+--- private DNS zone: VNet links ---
+[
+  {
+    "link": "nz2pu6coqogla",
+    "registration": false,
+    "state": "Completed",
+    "vnet": "/subscriptions/<guid>/resourceGroups/rg-hubspoke-lab/providers/Microsoft.Network/virtualNetworks/vnet-spoke1"
+  }
+]
+--- probe: after blob private endpoint (VM identity has NO data role yet) (18:06:55) ---
+DNS  blob : A=10.1.1.5 | cname chain=[stpelabjj1103.privatelink.blob.core.windows.net]
+DNS  file : A=<public-ip> | cname chain=[file.blz23prdstr05a.store.core.windows.net]
+TCP  443 blob: True
+TCP  445 file: False
+MI   token: acquired (not printed)
+HTTP MI read tiers/hot.txt: 403 (service reached, request refused)
+--- VM managed identity granted Storage Blob Data Reader on container tiers (portal) ---
+[
+  {
+    "role": "Storage Blob Data Reader",
+    "scope": "/subscriptions/<guid>/resourceGroups/rg-storage-lab/providers/Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default/containers/tiers"
+  }
+]
+--- probe: after role assignment, attempt 1 (18:11:52) ---
+DNS  blob : A=10.1.1.5 | cname chain=[stpelabjj1103.privatelink.blob.core.windows.net]
+DNS  file : A=<public-ip> | cname chain=[file.blz23prdstr05a.store.core.windows.net]
+TCP  443 blob: True
+TCP  445 file: False
+MI   token: acquired (not printed)
+HTTP MI read tiers/hot.txt: 200 content=[P7 M1 synthetic test file, tier Hot, 2026-11-03T11:12:51.3448040-05:00]

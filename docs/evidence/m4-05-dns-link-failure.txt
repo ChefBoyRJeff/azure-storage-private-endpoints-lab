@@ -1,0 +1,27 @@
+=== M4e: planned failure - private DNS zone VNet link deleted in the portal (18:14:46) ===
+--- probe: symptom check 1 (18:14:46) ---
+DNS  blob : A=<public-ip> | cname chain=[stpelabjj1103.privatelink.blob.core.windows.net -> blob.blz23prdstr05a.store.core.windows.net]
+DNS  file : A=<public-ip> | cname chain=[file.blz23prdstr05a.store.core.windows.net]
+TCP  443 blob: False
+TCP  445 file: False
+MI   token: acquired (not printed)
+HTTP MI read tiers/hot.txt: NO RESPONSE (The operation has timed out.)
+--- diagnosis 1: is the private endpoint healthy? ---
+pe state: Approved
+--- diagnosis 2: does the zone still have the A record? ---
+Name           Ip
+-------------  --------
+stpelabjj1103  10.1.1.5
+--- diagnosis 3: which VNets is the zone linked to? ---
+links: []
+--- remediation: VNet link re-created in the portal as link-vnet-spoke1 (18:20:12) ---
+Link              Registration    State
+----------------  --------------  ---------
+link-vnet-spoke1  False           Completed
+--- probe: after fix 1 (18:20:15) ---
+DNS  blob : A=10.1.1.5 | cname chain=[stpelabjj1103.privatelink.blob.core.windows.net]
+DNS  file : A=<public-ip> | cname chain=[file.blz23prdstr05a.store.core.windows.net]
+TCP  443 blob: True
+TCP  445 file: False
+MI   token: acquired (not printed)
+HTTP MI read tiers/hot.txt: 200 content=[P7 M1 synthetic test file, tier Hot, 2026-11-03T11:12:51.3448040-05:00]

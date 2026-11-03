@@ -1,0 +1,22 @@
+=== M4c: baseline before any private endpoint (storage public access = all networks) ===
+--- probe: baseline (17:59:18) ---
+DNS  blob : A=<public-ip> | cname chain=[blob.blz23prdstr05a.store.core.windows.net]
+DNS  file : A=<public-ip> | cname chain=[file.blz23prdstr05a.store.core.windows.net]
+TCP  443 blob: False
+TCP  445 file: False
+MI   token: acquired (not printed)
+HTTP MI read tiers/hot.txt: NO RESPONSE (The operation has timed out.)
+--- effective routes on the VM NIC (user routes and default route) ---
+  source=Default prefix=0.0.0.0/0 nextHop=Internet  state=Invalid
+  source=User prefix=0.0.0.0/0 nextHop=None 10.0.1.4 state=Active
+--- P1 route definition (to explain nextHop=None above) ---
+Name                Prefix     Ip
+------------------  ---------  --------
+Default-To-Hub-NVA  0.0.0.0/0  10.0.1.4
+--- route as JSON (table view hid the type column) ---
+{
+  "nextHopIp": "10.0.1.4",
+  "nextHopType": "VirtualAppliance",
+  "prefix": "0.0.0.0/0"
+}
+FINDING: configured nextHopType=VirtualAppliance 10.0.1.4, but effective route on the VM NIC shows nextHop=None (drop). Likely because no NIC holds 10.0.1.4 (hypothesis, not confirmed). Either way public-bound traffic is dropped.

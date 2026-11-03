@@ -1,0 +1,43 @@
+=== M4g: file private endpoint (portal) + SMB mount from the VM ===
+Name           Ip
+-------------  --------
+stpelabjj1103  10.1.1.6
+links: Completed
+--- probe: after file private endpoint (18:31:14) ---
+DNS  blob : A=10.1.1.5 | cname chain=[stpelabjj1103.privatelink.blob.core.windows.net]
+DNS  file : A=10.1.1.6 | cname chain=[stpelabjj1103.privatelink.file.core.windows.net]
+TCP  443 blob: True
+TCP  445 file: True
+MI   token: acquired (not printed)
+HTTP MI read tiers/hot.txt: 200 content=[P7 M1 synthetic test file, tier Hot, 2026-11-03T11:12:51.3448040-05:00]
+--- SMB mount test (key1 passed as a Run Command parameter, never printed) ---
+DNS  file : A=10.1.1.6
+TCP  445  : True
+MOUNT: Z: -> \\<account>.file.core.windows.net\labshare OK
+LIST : budget.txt, report.txt
+READ : report.txt = [P7 M3 important report v1, 2026-11-03T17:36:00.8712871-05:00]
+WRITE: from-vm.txt = []
+SMB  : dialect=3.1.1 encrypted=True
+SNAP : budget.txt in snapshot @GMT-2026.11.03-22.43.10 = [P7 M3 budget sheet, 2026-11-03T17:36:00.8937284-05:00]
+UNMOUNT: OK
+--- rotate key1 so the key used above is dead ---
+renew key1 exit=0
+--- re-run with stdout AND stderr (WRITE above returned empty); key2 this time, rotated after ---
+stdout:
+DNS  file : A=10.1.1.6
+TCP  445  : True
+MOUNT: Z: -> \\<account>.file.core.windows.net\labshare OK
+LIST : budget.txt, report.txt
+READ : report.txt = [P7 M3 important report v1, 2026-11-03T17:36:00.8712871-05:00]
+WRITE: from-vm.txt = []
+SMB  : dialect=3.1.1 encrypted=True
+SNAP : budget.txt in snapshot @GMT-2026.11.03-22.43.10 = [P7 M3 budget sheet, 2026-11-03T17:36:00.8937284-05:00]
+UNMOUNT: OK
+stderr:
+Set-Content : Could not find a part of the path '\\stpelabjj1103.file.core.windows.net\labshare\stpelabjj1103.file.core
+.windows.net\labshare\stpelabjj1103.file.core.windows.net\labshare\finance\from-vm.txt'.
+At C:\Packages\Plugins\Microsoft.CPlat.Core.RunCommandWindows\1.1.22\Downloads\script8.ps1:19 char:93
++ ... endpoint, $(Get-Date -Format o)" | Set-Content Z:\finance\from-vm.txt
++                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (\\stpelabjj1103...nce\from-vm.txt:String) [Set-Content], DirectoryNotFo 
+renew key2 exit=0

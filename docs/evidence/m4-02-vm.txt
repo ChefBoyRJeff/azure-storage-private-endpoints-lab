@@ -1,0 +1,17 @@
+=== M4b: test VM in P1 spoke1 snet-workload (CLI), 2026-11-03 17:55 ===
+WARNING: Warning: This image MicrosoftWindowsServer:WindowsServer:2022-datacenter-azure-edition-smalldisk:latest is scheduled for deprecation and will be blocked after February 01, 2027.
+WARNING: Consider upgrading security for your workloads using Azure Trusted Launch VMs. To know more about Trusted Launch, please visit https://aka.ms/TrustedLaunch.
+WARNING: No access was given yet to the 'vm-pe-test', because '--scope' was not provided. You should setup by creating a role assignment, e.g. 'az role assignment create --assignee <principal-id> --role contributor -g rg-storage-lab' would let it access the current resource group. To get the pricipal id, run 'az vm show -g rg-storage-lab -n vm-pe-test --query "identity.principalId" -otsv'
+vm create exit=0
+{
+  "identity": "SystemAssigned",
+  "name": "vm-pe-test",
+  "osDiskGB": 30,
+  "osDiskSku": "Standard_LRS",
+  "power": "VM running",
+  "privateIp": "10.1.1.4",
+  "publicIp": "",
+  "size": "Standard_B2s",
+  "zones": null
+}
+resource types in rg-storage-lab: Microsoft.Compute/disks, Microsoft.Compute/virtualMachines, Microsoft.Network/networkInterfaces, Microsoft.Storage/storageAccounts

@@ -1,0 +1,35 @@
+=== M4a preflight (read-only), 2026-11-03 17:51 ===
+vnet-spoke1 region: eastus
+storage account region: eastus
+snet-workload: prefix=10.1.1.0/25 ipConfigsInUse=1 privateEndpoints=1 pePolicies=Disabled nsg=nsg-spoke1-workload rt=rt-spoke1-workload
+--- nsg-spoke1-workload inbound rules ---
+Prio    Name                    Access    Src             Ports
+------  ----------------------  --------  --------------  -------
+100     Allow-HTTPS-From-Hub    Allow     10.0.0.0/16     443
+110     Allow-Mgmt-From-Shared  Allow     10.0.1.0/26
+120     Allow-Intra-Subnet      Allow     10.1.1.0/25     *
+4000    Deny-VNet-Inbound       Deny      VirtualNetwork  *
+--- Standard_B2s restrictions in eastus (empty = available) ---
+[
+  {
+    "reason": "NotAvailableForSubscription",
+    "type": "Zone",
+    "zones": [
+      "2"
+    ]
+  }
+]
+--- B-series vCPU quota in eastus ---
+Used    Limit
+------  -------
+0       10
+--- B2s price (Retail Prices API, Consumption, pay-as-you-go) ---
+  Virtual Machines BS Series | B2s | 0.0416 per 1 Hour
+  Virtual Machines BS Series Windows | B2s | 0.0496 per 1 Hour
+--- UNEXPECTED: existing private endpoint / IP config in snet-workload; identifying (read-only) ---
+subnet privateEndpoints: 
+subnet ipConfigurations: 
+--- private DNS zones in subscription now ---
+
+CORRECTION: 'ipConfigsInUse=1 privateEndpoints=1' above is a script bug: @($null).Count is 1 when the property is absent. Raw JSON check:
+ipConfigurations present in JSON: ; privateEndpoints present in JSON: 
