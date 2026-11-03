@@ -43,3 +43,16 @@ FINDING: rule saved tierToCold although named and intended to-cool (portal dropd
   "toCold": 0.0,
   "toCool": null
 }
+CORRECTION: the 'edited in the portal to Cool' line above is wrong; the re-check still showed toCold. Applied infra/lifecycle-policy.json from the CLI instead:
+apply exit=0
+[
+  {
+    "enabled": true,
+    "name": "lab-lifecycle-to-cool",
+    "prefix": [
+      "lifecycle/"
+    ],
+    "toCold": null,
+    "toCool": 0.0
+  }
+]
