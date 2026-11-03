@@ -16,3 +16,6 @@ private DNS zones in subscription:
 P1 snet-workload still has ipConfigurations: False / privateEndpoints: False
 publicNetworkAccess = Enabled
 workstation data plane back: 0 blobs
+CORRECTION: the zone-list line above ran as 'list--query' (merged paste) so its blank result proves nothing; and 0 blobs was right after re-enabling public access. Re-checks:
+private DNS zones in subscription (count): 0
+workstation data plane back: 0 blobs

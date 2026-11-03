@@ -16,8 +16,13 @@ try {
     'MOUNT: Z: -> \\<account>.file.core.windows.net\labshare OK'
     "LIST : $((Get-ChildItem Z:\finance | ForEach-Object { $_.Name }) -join ', ')"
     "READ : report.txt = [$((Get-Content Z:\finance\report.txt) -join ' ')]"
-    "P7 M4g written from vm-pe-test over SMB via private endpoint, $(Get-Date -Format o)" | Set-Content Z:\finance\from-vm.txt
-    "WRITE: from-vm.txt = [$((Get-Content Z:\finance\from-vm.txt) -join ' ')]"
+    # Write through the UNC path, not Z:. In Windows PowerShell 5.1, Set-Content on a NEW file under a PSDrive
+    # rooted at a UNC path failed with a doubled path (M4g finding). The SMB session from New-PSDrive is reused.
+    $unc = "\\$h\labshare\finance\from-vm.txt"
+    try {
+        [System.IO.File]::WriteAllText($unc, "P7 M4g written from vm-pe-test over SMB via private endpoint, $(Get-Date -Format o)")
+        "WRITE: from-vm.txt = [$([System.IO.File]::ReadAllText($unc))]"
+    } catch { "WRITE: FAILED $($_.Exception.Message)" }
     $smb = Get-SmbConnection -ServerName $h -ErrorAction SilentlyContinue | Select-Object -First 1
     if ($smb) { "SMB  : dialect=$($smb.Dialect) encrypted=$($smb.Encrypted)" }
     # Share snapshot over SMB ("Previous Versions" path token)

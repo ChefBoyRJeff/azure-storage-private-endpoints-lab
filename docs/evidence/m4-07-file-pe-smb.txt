@@ -41,3 +41,4 @@ At C:\Packages\Plugins\Microsoft.CPlat.Core.RunCommandWindows\1.1.22\Downloads\s
 +                                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     + CategoryInfo          : ObjectNotFound: (\\stpelabjj1103...nce\from-vm.txt:String) [Set-Content], DirectoryNotFo 
 renew key2 exit=0
+FINDING: SMB read/list/snapshot verified; WRITE FAILED both runs. stderr: Set-Content via Z: produced a tripled UNC path (DirectoryNotFound). Hypothesis: Windows PowerShell 5.1 path resolution for NEW files on a UNC-rooted PSDrive. Script fixed to write via the UNC path; not re-tested (VM deleted). Keys used were rotated.
