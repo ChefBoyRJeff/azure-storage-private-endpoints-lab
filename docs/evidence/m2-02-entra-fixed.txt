@@ -1,0 +1,30 @@
+=== M2a fix: Storage Blob Data Reader on container 'tiers' only (assigned in the portal) ===
+--- assignment as stored ---
+[
+  {
+    "role": "Storage Blob Data Reader",
+    "scope": "/subscriptions/<guid>/resourceGroups/rg-storage-lab/providers/Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default/containers/tiers"
+  }
+]
+17:17:37  + 0.0 min  list tiers with Entra: denied
+17:18:08  + 0.5 min  list tiers with Entra: denied
+17:18:40  + 1.1 min  list tiers with Entra: ALLOWED
+--- positive: blobs listed and read with Entra (no key) ---
+archive.txt
+cold.txt
+cool.txt
+hot.txt
+move-me.txt
+hot.txt content: P7 M1 synthetic test file, tier Hot, 2026-11-03T11:12:51.3448040-05:00
+--- negative 1: write to tiers (expect denied: Reader has no write dataAction) ---
+ERROR: 
+You do not have the required permissions needed to perform this operation.
+Depending on your operation, you may need to be assigned one of the following roles:
+exit=0
+--- negative 2: list a different container (expect denied: role is scoped to tiers only) ---
+ERROR: 
+You do not have the required permissions needed to perform this operation.
+Depending on your operation, you may need to be assigned one of the following roles:
+exit=0
+NOTE: both 'exit=0' lines above are wrong: Select-Object -First 3 stopped the pipeline, so az's exit code was lost. Denial is shown by the ERROR text; upload absence verified below.
+deny.txt exists in tiers (expect false): false

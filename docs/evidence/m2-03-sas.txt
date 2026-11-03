@@ -1,0 +1,23 @@
+=== M2b: SAS tests. Tokens kept in variables only; evidence shows HTTP results and parameter NAMES, never values ===
+--- 1. service SAS (signed with the account key), read hot.txt ---
+params: se,sp,spr,sv,sr,sig
+service SAS, read                                GET -> HTTP 200 
+--- 2. user delegation SAS (signed with an Entra-issued key), read hot.txt ---
+params: se,sp,spr,sv,sr,skoid,sktid,skt,ske,sks,skv,sig
+user delegation SAS, read                        GET -> HTTP 200 
+--- 3. user delegation SAS that ASKS for create+write; identity is only Reader ---
+user delegation SAS, write (expect 403)          PUT -> HTTP 403 AuthorizationPermissionMismatch
+--- 4. service SAS bound to stored access policy 'lab-read' (perms/expiry live in the policy) ---
+{
+  "lab-read": {
+    "expiry": "2026-11-03T23:20:00.0000000Z",
+    "permission": "r",
+    "start": "2026-11-03T22:20:00.0000000Z"
+  }
+}
+params: spr,sv,si,sr,sig
+policy SAS, read (policy present)                GET -> HTTP 200 
+--- policy deleted in the portal; retrying the SAME token (changes can take up to ~30 s) ---
+17:23:50  +  0 s  policy SAS -> HTTP 403
+policy SAS after policy delete (expect 403)      GET -> HTTP 403 AuthenticationFailed
+plain service SAS 1, still valid (expect 200)    GET -> HTTP 200 

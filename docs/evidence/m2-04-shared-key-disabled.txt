@@ -1,0 +1,26 @@
+=== M2c: shared key access disabled in the portal ===
+allowSharedKeyAccess = false
+17:25:51  +  0 s  service SAS -> HTTP 403
+service SAS, key-signed (expect 403)             GET -> HTTP 403 KeyBasedAuthenticationNotPermitted
+user delegation SAS, Entra-signed (expect 200)   GET -> HTTP 200 
+--- auth-mode key (CLI fetches the key, then uses it) ---
+ERROR: Key based authentication is not permitted on this storage account.
+ErrorCode:KeyBasedAuthenticationNotPermitted
+exit=1
+--- auth-mode login (Entra + Storage Blob Data Reader) ---
+exit=0; blobs: archive.txt, cold.txt, cool.txt, hot.txt, move-me.txt
+--- control plane still lists keys (count only, values never printed) ---
+--- re-enable shared key (needed for M3 Azure Files) via CLI ---
+update exit=0; allowSharedKeyAccess = true
+17:26:08  +  0 s  SAME old service SAS -> HTTP 403
+17:26:23  + 15 s  SAME old service SAS -> HTTP 200
+FINDING: disabling shared key suspends key-signed tokens; it does not revoke them. Re-enabling restored the old SAS. Revocation requires key rotation.
+keys returned by listKeys (names only, re-run without JMESPath parentheses): key1, key2
+--- revoke for real: rotate key1 (the key that signed sas1); output suppressed so no key value is printed ---
+renew key1 exit=0
+17:27:04  +  0 s  old service SAS after key1 rotation -> HTTP 200
+17:27:19  + 15 s  old service SAS after key1 rotation -> HTTP 403
+old service SAS after rotation (expect 403)      GET -> HTTP 403 AuthenticationFailed
+user delegation SAS, unaffected by key rotation  GET -> HTTP 200 
+--- auth-mode key still works: CLI fetches the NEW key ---
+auth-mode key blob count: 5, exit=0

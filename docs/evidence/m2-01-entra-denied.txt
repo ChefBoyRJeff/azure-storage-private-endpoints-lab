@@ -1,0 +1,39 @@
+=== M2a: symptom - list blobs with Entra sign-in (auth-mode login) as subscription Owner ===
+ERROR: 
+You do not have the required permissions needed to perform this operation.
+Depending on your operation, you may need to be assigned one of the following roles:
+    "Storage Blob Data Owner"
+    "Storage Blob Data Contributor"
+    "Storage Blob Data Reader"
+    "Storage Queue Data Contributor"
+    "Storage Queue Data Reader"
+    "Storage Table Data Contributor"
+    "Storage Table Data Reader"
+
+If you want to use the old authentication method and allow querying for the right account key, please use the "--auth-mode" parameter and "key" value.
+                    
+exit=1
+--- portal symptom (container tiers, Authentication method = Microsoft Entra user account) ---
+You do not have permissions to list the data using your user account with Microsoft Entra ID. ... This request is not authorized to perform this operation using this permission. (RequestId redacted) Container showed 0 items.
+--- diagnosis 1: my role assignments (all scopes) ---
+Role                       Scope
+-------------------------  ---------------------------------------------------
+Owner                      /subscriptions/<guid>
+User Access Administrator  /
+--- diagnosis 2: Owner = control plane only (Actions vs DataActions) ---
+{
+  "actions": [
+    "*"
+  ],
+  "dataActions": []
+}
+--- diagnosis 3: the role that grants blob reads ---
+{
+  "actions": [
+    "Microsoft.Storage/storageAccounts/blobServices/containers/read",
+    "Microsoft.Storage/storageAccounts/blobServices/generateUserDelegationKey/action"
+  ],
+  "dataActions": [
+    "Microsoft.Storage/storageAccounts/blobServices/containers/blobs/read"
+  ]
+}
