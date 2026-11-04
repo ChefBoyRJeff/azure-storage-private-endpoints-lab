@@ -34,7 +34,20 @@ A team keeps files in Azure Storage but hands out account keys, leaves data reac
 
 ## Cost
 
-To be filled in M0 from the Azure Retail Prices API (storage, private endpoint, private DNS zone, B1s VM). Target under $1; budget $5.
+Unit prices from the Azure Retail Prices API on 2026-11-03, pay-as-you-go (raw output in `docs/evidence/m0-03-prices.txt`).
+
+| Item | Unit price | Lab usage | Estimate |
+|---|---|---|---|
+| Blob, LRS, data stored | Hot $0.0208, Cool $0.0152, Cold $0.0036, Archive $0.00099 per GB/month | well under 1 GB, a few days | < $0.01 |
+| Azure Files, LRS | $0.06 per GB/month (transaction optimized); Hot $0.0287, Cool $0.0228 | under 1 GB | < $0.01 |
+| Private endpoint | $0.01 per hour (meter listed under region `Global`), plus data processed per GB | about 3 h in M4 | about $0.03 |
+| Private DNS zone | $0.50 per zone/month (first 25 zones); queries $0.40 per million | 1 zone | up to $0.50 |
+| B1s Linux VM | $0.0104 per hour, plus OS disk | about 3 h in M4 | about $0.03-0.05 |
+| **Total** | | | **under $1**, mostly the DNS zone |
+
+Uncertainty: whether a short-lived private DNS zone is prorated or billed as a full month is not confirmed; the estimate assumes the worst case. Transactions, rehydration and data-processed charges are negligible at lab volumes. Budget guardrail: $5/month on `rg-storage-lab` (`budget-storage-pe-lab`).
+
+Price lookup findings (M0): the API response field is `type`, not `priceType` (that is only the filter name), so the first query returned nothing; the standard private endpoint meter is not listed under `eastus` but under `Global`; Hot blob shows three prices because of volume tiers (the lab is in the first tier).
 
 ## Safety
 

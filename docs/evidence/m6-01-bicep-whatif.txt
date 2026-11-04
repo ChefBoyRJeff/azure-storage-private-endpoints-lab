@@ -1,0 +1,184 @@
+=== M6b: lint + build (Bicep 0.48.1) ===
+
+lint exit=0
+build exit=0
+--- drift investigation: who changed file service properties (share soft delete 7 -> disabled)? ---
+  11/3/2026 4:05:47 PM  Microsoft.Storage/storageAccounts/fileservices/write  caller=<user>
+=== M6c: what-if, as configured (deployPrivateEndpoints=false) ===
+Note: The result may contain false positive predictions (noise).
+You can help us improve the accuracy of the result by opening an issue here: https://aka.ms/WhatIfIssues
+NOTICE! - Want to get What-if without noise? Move to Deployment Stacks What-If https://aka.ms/stackswhatifGA
+
+Resource and property changes are indicated with these symbols:
+  - Delete
+  ~ Modify
+  = Nochange
+  x Noeffect
+
+The deployment will update the following scope:
+
+Scope: /subscriptions/<guid>/resourceGroups/rg-storage-lab
+
+  ~ Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default [2025-06-01]
+    - properties.staticWebsite:
+
+        enabled: false
+
+
+  ~ Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default/containers/lifecycle [2025-06-01]
+    - properties.defaultEncryptionScope:      "$account-encryption-key"
+    - properties.denyEncryptionScopeOverride: false
+
+  ~ Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default/containers/scratch [2025-06-01]
+    - properties.defaultEncryptionScope:      "$account-encryption-key"
+    - properties.denyEncryptionScopeOverride: false
+
+  ~ Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default/containers/tiers [2025-06-01]
+    - properties.defaultEncryptionScope:      "$account-encryption-key"
+    - properties.denyEncryptionScopeOverride: false
+
+  ~ Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default/containers/transfer [2025-06-01]
+    - properties.defaultEncryptionScope:      "$account-encryption-key"
+    - properties.denyEncryptionScopeOverride: false
+
+  ~ Microsoft.Storage/storageAccounts/stpelabjj1103/fileServices/default [2025-06-01]
+    ~ properties.shareDeleteRetentionPolicy.days:    0 => 7
+    ~ properties.shareDeleteRetentionPolicy.enabled: false => true
+
+  ~ Microsoft.Storage/storageAccounts/stpelabjj1103/fileServices/default/shares/labshare [2025-06-01]
+    - properties.metadata:
+
+        AzureBackupProtected: "false"
+
+
+  = Microsoft.Storage/storageAccounts/stpelabjj1103 [2025-06-01]
+    x properties.encryption.services:
+
+        blob.enabled: true
+        blob.keyType: "Account"
+        file.enabled: true
+        file.keyType: "Account"
+
+
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/managementPolicies/default [2025-06-01]
+
+Resource changes: 7 to modify, 2 no change.
+--- drift analysis: only fileServices/write in the activity log is 16:05:47 (account creation). Share soft delete was never verified in M1a (only blob/container), so cause is unconfirmed: never applied OR changed via data plane (not in activity log). ---
+=== M6c pass 2: what-if after declaring container encryption-scope defaults ===
+Note: The result may contain false positive predictions (noise).
+You can help us improve the accuracy of the result by opening an issue here: https://aka.ms/WhatIfIssues
+NOTICE! - Want to get What-if without noise? Move to Deployment Stacks What-If https://aka.ms/stackswhatifGA
+
+Resource and property changes are indicated with these symbols:
+  - Delete
+  ~ Modify
+  = Nochange
+  x Noeffect
+
+The deployment will update the following scope:
+
+Scope: /subscriptions/<guid>/resourceGroups/rg-storage-lab
+
+  ~ Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default [2025-06-01]
+    - properties.staticWebsite:
+
+        enabled: false
+
+
+  ~ Microsoft.Storage/storageAccounts/stpelabjj1103/fileServices/default [2025-06-01]
+    ~ properties.shareDeleteRetentionPolicy.days:    0 => 7
+    ~ properties.shareDeleteRetentionPolicy.enabled: false => true
+
+  ~ Microsoft.Storage/storageAccounts/stpelabjj1103/fileServices/default/shares/labshare [2025-06-01]
+    - properties.metadata:
+
+        AzureBackupProtected: "false"
+
+
+  = Microsoft.Storage/storageAccounts/stpelabjj1103 [2025-06-01]
+    x properties.encryption.services:
+
+        blob.enabled: true
+        blob.keyType: "Account"
+        file.enabled: true
+        file.keyType: "Account"
+
+
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default/containers/lifecycle [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default/containers/scratch [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default/containers/tiers [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default/containers/transfer [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/managementPolicies/default [2025-06-01]
+
+Resource changes: 3 to modify, 6 no change.
+=== M6c deploy (incremental) ===
+{
+  "duration": "PT4.5567878S",
+  "state": "Succeeded"
+}
+share soft delete now: true 7
+=== M6c pass 3: what-if after deploy (expect no real changes) ===
+Note: The result may contain false positive predictions (noise).
+You can help us improve the accuracy of the result by opening an issue here: https://aka.ms/WhatIfIssues
+NOTICE! - Want to get What-if without noise? Move to Deployment Stacks What-If https://aka.ms/stackswhatifGA
+
+Resource and property changes are indicated with these symbols:
+  - Delete
+  ~ Modify
+  = Nochange
+  x Noeffect
+
+The deployment will update the following scope:
+
+Scope: /subscriptions/<guid>/resourceGroups/rg-storage-lab
+
+  ~ Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default [2025-06-01]
+    - properties.staticWebsite:
+
+        enabled: false
+
+
+  = Microsoft.Storage/storageAccounts/stpelabjj1103 [2025-06-01]
+    x properties.encryption.services:
+
+        blob.enabled: true
+        blob.keyType: "Account"
+        file.enabled: true
+        file.keyType: "Account"
+
+
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default/containers/lifecycle [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default/containers/scratch [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default/containers/tiers [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default/containers/transfer [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/fileServices/default [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/fileServices/default/shares/labshare [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/managementPolicies/default [2025-06-01]
+
+Resource changes: 1 to modify, 8 no change.
+=== M6c preview: M4 design with deployPrivateEndpoints=true (what-if only, nothing deployed) ===
+  - Delete
+  + Create
+  ~ Modify
+  = Nochange
+  x Noeffect
+  + Microsoft.Network/privateDnsZones/privatelink.blob.core.windows.net [2024-06-01]
+  + Microsoft.Network/privateDnsZones/privatelink.blob.core.windows.net/virtualNetworkLinks/link-vnet-spoke1 [2024-06-01]
+  + Microsoft.Network/privateDnsZones/privatelink.file.core.windows.net [2024-06-01]
+  + Microsoft.Network/privateDnsZones/privatelink.file.core.windows.net/virtualNetworkLinks/link-vnet-spoke1 [2024-06-01]
+  + Microsoft.Network/privateEndpoints/pe-stpelabjj1103-blob [2024-05-01]
+  + Microsoft.Network/privateEndpoints/pe-stpelabjj1103-blob/privateDnsZoneGroups/default [2024-05-01]
+  + Microsoft.Network/privateEndpoints/pe-stpelabjj1103-file [2024-05-01]
+  + Microsoft.Network/privateEndpoints/pe-stpelabjj1103-file/privateDnsZoneGroups/default [2024-05-01]
+  ~ Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default [2025-06-01]
+    - properties.staticWebsite:
+  = Microsoft.Storage/storageAccounts/stpelabjj1103 [2025-06-01]
+    x properties.encryption.services:
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default/containers/lifecycle [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default/containers/scratch [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default/containers/tiers [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/blobServices/default/containers/transfer [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/fileServices/default [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/fileServices/default/shares/labshare [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stpelabjj1103/managementPolicies/default [2025-06-01]
+Resource changes: 8 to create, 1 to modify, 8 no change.
