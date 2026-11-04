@@ -1,0 +1,14 @@
+=== M6e: final teardown, 2026-11-04 10:40 ===
+1 removed Storage Blob Data Reader on .../tiers exit=0
+1 removed Storage Blob Data Contributor on .../transfer exit=0
+2 delete rg-storage-lab exit=0
+--- verify ---
+rg-storage-lab exists: false
+resources tagged project=azure-storage-private-endpoints-lab: 0
+private DNS zones in subscription: 0
+my remaining role assignments on the lab account: 0
+P1 snet-workload has ipConfigurations/privateEndpoints: False / False
+budget kept until charges post: budget-storage-pe-lab
+--- local cleanup ---
+Successfully removed all jobs.
+temp test folders removed
