@@ -1,0 +1,42 @@
+=== M5c: least-privilege fix - container 'transfer' + Storage Blob Data Contributor on that container only (CLI) ===
+create container transfer (control plane) exit=0
+assign Contributor on transfer exit=0
+--- 1. upload (retries while the role propagates) ---
+09:55:57  + 0.1 min  upload exit=1  Final Job Status: Cancelled
+09:56:31  + 0.6 min  upload exit=0  Final Job Status: Completed
+Number of File Transfers: 4
+Number of File Transfers Completed: 4
+Number of File Transfers Failed: 0
+Final Job Status: Completed
+file1.txt; Content Length: 59.00 B
+file2.txt; Content Length: 59.00 B
+file3.txt; Content Length: 59.00 B
+reports/q4.txt; Content Length: 21.00 B
+--- 2. server-to-server copy tiers/hot.txt -> transfer/copied/hot.txt (data moves inside Azure) ---
+Number of File Transfers Completed: 1
+Final Job Status: Completed
+exit=0
+--- 3. sync: change file1, delete file3, add file4 locally ---
+--- 3a. dry run (shows the plan, changes nothing) ---
+DRYRUN: remove https://stpelabjj1103.blob.core.windows.net/transfer/file3.txt
+DRYRUN: copy \\?\<local>\file1.txt to https://stpelabjj1103.blob.core.windows.net/transfer/file1.txt
+DRYRUN: copy \\?\<local>\file4.txt to https://stpelabjj1103.blob.core.windows.net/transfer/file4.txt
+--- 3b. real sync ---
+Number of Copy Transfers for Files: 2
+Number of Copy Transfers for Folder Properties: 0
+Total Number of Copy Transfers: 2
+Number of Copy Transfers Completed: 2
+Number of Copy Transfers Failed: 0
+Number of Deletions at Destination: 1
+Total Number of Bytes Transferred: 105
+Total Number of Bytes Enumerated: 105
+Final Job Status: Completed
+exit=0
+--- 3c. verify container after sync ---
+file1.txt; Content Length: 54.00 B
+file2.txt; Content Length: 59.00 B
+file4.txt; Content Length: 51.00 B
+copied/hot.txt; Content Length: 72.00 B
+reports/q4.txt; Content Length: 21.00 B
+file1 in Azure now: P7 M5 file1 EDITED 2026-11-04T09:56:40.6252640-05:00
+file3 deleted by sync, still recoverable as a previous version: 1 version(s)

@@ -1,0 +1,31 @@
+=== M5b: AzCopy with Entra auth (AZCOPY_AUTO_LOGIN_TYPE=AZCLI); identity is Storage Blob Data Reader on 'tiers' ===
+--- list tiers (expect success: Reader can list and read) ---
+INFO: Authenticating to source using Azure AD
+archive.txt; Content Length: 76.00 B
+cold.txt; Content Length: 73.00 B
+cool.txt; Content Length: 73.00 B
+hot.txt; Content Length: 72.00 B
+move-me.txt; Content Length: 50.00 B
+exit=0
+--- upload local folder to tiers (planned failure: expect 403 AuthorizationPermissionMismatch) ---
+Job <guid> has started
+INFO: Authentication failed, it is either not correct, or expired, or does not have the correct permission PUT https://stpelabjj1103.blob.core.windows.net/tiers/m5%2Ffile2.txt
+RESPONSE 403: 403 This request is not authorized to perform this operation using this permission.
+ERROR CODE: AuthorizationPermissionMismatch
+∩╗┐<?xml version="1.0" encoding="utf-8"?><Error><Code>AuthorizationPermissionMismatch</Code><Message>This request is not authorized to perform this operation using this permission.
+0.0 %, 0 Done, 1 Failed, 3 Pending, 0 Skipped, 4 Total, 2-sec Throughput (Mb/s): 0.0008
+Number of File Transfers: 4
+Number of Folder Property Transfers: 0
+Number of Symlink Transfers: 0
+Total Number of Transfers: 4
+Number of File Transfers Completed: 0
+Number of Folder Transfers Completed: 0
+Number of File Transfers Failed: 1
+Number of Folder Transfers Failed: 0
+Number of File Transfers Skipped: 0
+Number of Folder Transfers Skipped: 0
+Number of Hardlinks Failed: 0
+Final Job Status: Cancelled
+exit=1
+--- confirm nothing landed ---
+blobs under tiers/m5/: 0

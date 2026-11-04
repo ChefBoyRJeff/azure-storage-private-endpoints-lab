@@ -1,0 +1,17 @@
+=== M5d: Storage Explorer (GUI) actions, verified from the CLI ===
+file3 restored in transfer (current version exists): true
+--- did the Storage Explorer upload to 'tiers' land? (Jeff's RBAC on tiers = Reader only) ---
+Name         Modified
+-----------  -------------------------
+archive.txt  2026-11-03T16:12:59+00:00
+cold.txt     2026-11-03T16:12:57+00:00
+cool.txt     2026-11-03T18:54:54+00:00
+file2.txt    2026-11-04T15:12:05+00:00
+hot.txt      2026-11-03T18:53:51+00:00
+move-me.txt  2026-11-03T16:13:01+00:00
+--- Storage Explorer observations (typed by Jeff) ---
+RESULT: tiers upload via Storage Explorer SUCCEEDED (file2.txt, 15:12:05 UTC) although Jeff's RBAC on tiers is Reader only; AzCopy (Entra) was denied 403 for the same write. Conclusion (inference): Storage Explorer authorized with the account key, obtained via Owner's listKeys, which bypasses RBAC.
+cleanup: removed test upload tiers/file2.txt exit=0 (kept as a previous version by versioning)
+Storage Explorer Properties for stpelabjj1103: no auth-mode field; panel holds Primary Key, Secondary Key and Primary Connection String (masked). Explorer has fetched the account keys, which supports the key-auth inference above.
+Storage Explorer snapshots for labshare: 1 listed, labshare (2026-11-03T22:43:10.0000000Z) = the M3 'before-incident' snapshot (Explorer shows the timestamp, not the portal comment).
+file3.txt restored in transfer by promoting its previous version in Storage Explorer: verified true above.

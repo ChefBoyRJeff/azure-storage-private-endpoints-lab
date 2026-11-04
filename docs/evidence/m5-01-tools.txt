@@ -1,0 +1,4 @@
+=== M5a: tools installed with winget, 2026-11-04 09:44 ===
+azcopy: azcopy version 10.34.1
+storage explorer: installed
+az cli: 2.90.0
