@@ -56,3 +56,12 @@ apply exit=0
     "toCool": 0.0
   }
 ]
+--- next-day check 2026-11-04 08:38 local (rule applied about 14:02 the day before) ---
+Terminate batch job (Y/N)? 
+--- next-day check 2026-11-04 08:40 local (rule applied about 14:02 the day before) ---
+{
+  "inferred": null,
+  "tier": "Cool",
+  "tierChanged": "2026-11-04T11:14:35+00:00"
+}
+RESULT: lifecycle engine moved lc-test.txt Hot -> Cool at 2026-11-04 11:14:35 UTC, about 16 h after the corrected rule was applied (about 19:02 UTC). Engine runs about daily; first run can take up to 24-48 h.
