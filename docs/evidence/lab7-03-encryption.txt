@@ -1,0 +1,94 @@
+=== Lab 7 M3: encryption (scopes, customer-managed key), 2026-11-06 12:33 ===
+  F1 (portal, Jeff): scope names must be alphanumeric, 4-63 characters ("scope-finance" was rejected; using scopefinance). Infrastructure encryption: "This option cannot be changed after this encryption scope is created."
+--- 1. scope and container as built in the portal ---
+  scopefinance: state= Enabled source= Microsoft.Storage requireInfrastructureEncryption= true
+  container finance: defaultEncryptionScope= scopefinance denyEncryptionScopeOverride= true
+  account default encryption: keySource= Microsoft.Storage infrastructureEncryption= false
+--- 2. upload with no scope specified (prediction: gets scopefinance) ---
+  upload exit=0; doc1 encryptionScope=scopefinance
+  probe1 (container redundancy) encryptionScope=
+--- 3. negative test: upload into finance with the account default scope (prediction: rejected) ---
+  upload with --encryption-scope $account-encryption-key exit=1 ERROR: The given encryption scope is not available.
+--- 4. disable scopefinance (prediction: doc1 unreadable, probe1 unaffected) ---
+  disable exit=0 at 12:33:17
+  +   3s doc1 -> HTTP 200 | probe1 -> HTTP 200
+  upload into finance while disabled: exit=0 Alive[################################################################]  100.0000%
+--- 5. re-enable scopefinance (prediction: doc1 readable again) ---
+  enable exit=0 at 12:39:03
+  +   1s doc1 -> HTTP 200
+  scopefinance state now: Enabled
+  leak check (should be 0): 0
+--- 6. re-test the disable (section 4 stayed HTTP 200 for ~5 min 46 s and an upload succeeded, against the docs) ---
+  Docs: "When you disable an encryption scope, any subsequent read or write operations made with the encryption scope will fail with HTTP error code 403." Hypotheses: (a) the change takes longer than 5 min to take effect; (b) the disable did not apply. Section 4 never checked the state after disabling.
+  Docs (billing): "When you enable an encryption scope, you are billed for a minimum of 30 days." Price lookup:
+    Blob Features | Archive LRS Named Encryption Scopes | 1 per 1/Month
+    Blob Features | Archive RA-GRS Named Encryption Scopes | 1.5 per 1/Month
+    Blob Features | Hot LRS Named Encryption Scopes | 1 per 1/Month
+    Blob Features | Hot RA-GRS Named Encryption Scopes | 1.5 per 1/Month
+  disable exit=0 at 12:41:40; state reported right after: Disabled
+  doc2 (uploaded while disabled in section 4) encryptionScope=scopefinance
+  +    7s doc1 -> HTTP 200 | probe1 -> HTTP 200 | state=Disabled
+  +  719s doc1 -> HTTP 409 EncryptionScopeNotAvailable | probe1 -> HTTP 200 | state=Disabled
+  RESULT: doc1 blocked after 719 s
+  upload into finance now: exit=1 ERROR: The given encryption scope is not available.
+--- 7. re-enable ---
+  enable exit=0 at 12:53:43; state: Enabled
+  +   22s doc1 -> HTTP 409 EncryptionScopeNotAvailable
+  +   53s doc1 -> HTTP 200
+  leak check (should be 0): 0
+--- 8. findings (scopes) ---
+  Predictions recorded before the test: (1) blobs in finance get scopefinance automatically; (2) a different scope is rejected; (3) disabling the scope blocks its blobs, other blobs unaffected; re-enabling restores access.
+  F2: prediction 1 held: doc1 encryptionScope=scopefinance; probe1 (container redundancy) shows no scope, i.e. the account default ($account-encryption-key).
+  F3: prediction 2 held: an upload with --encryption-scope $account-encryption-key into finance was rejected: "The given encryption scope is not available."
+  F4: prediction 3 held only after a delay. First test (section 4): doc1 stayed HTTP 200 and an upload succeeded for the whole ~5 min 46 s the scope was disabled. Re-test (section 6), state confirmed Disabled right after the change: doc1 became HTTP 409 EncryptionScopeNotAvailable after 719 s (~12 min); probe1 stayed 200; uploads were then rejected. Re-enable: still 409 at +22 s, HTTP 200 by +53 s.
+  F5: the error was 409 EncryptionScopeNotAvailable, not the 403 the docs state ("will fail with HTTP error code 403"). Log searches for 403 would miss it.
+  F6: the same message ("The given encryption scope is not available.") came back for two different causes: an override against denyEncryptionScopeOverride, and a disabled scope. The message alone does not tell them apart; the scope state and the container setting do.
+  F7: disabling a scope is not an immediate revocation (~12 min here); re-enabling took under a minute.
+  F8: cost: Named Encryption Scopes are $1 per scope per month (Hot LRS; $1.50 RA-GRS) and are billed for a minimum of 30 days from enabling (docs). scopefinance costs about $1.00 regardless of when it is disabled. This was missed in the cost plan.
+  RESULT M3a: encryption scope enforced per container; override blocked; disable blocks reads and writes after ~12 min with 409; re-enable restores access in under a minute.
+--- 9. customer-managed key as built in the portal ---
+  encryption: keySource= Microsoft.Keyvault keyName= cmk-storage vaultUri= https://kv-l7-jj1106.vault.azure.net keyVersion(set)=  currentKey= https://kv-l7-jj1106.vault.azure.net/keys/cmk-storage/<id> lastRotation= 2026-11-06T18:09:21.361351+00:00
+  identity: type= SystemAssigned principalId= /<id>  encryption.identity=D:\Development\azure-storage-private-endpoints-lab>  "C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin\\..\python.exe" -IBm azure.cli storage account show -g rg-storage-lab -n stl7srcjj1106 --query to_string(encryption.encryptionIdentity) -o tsv
+  vault: rbac= true softDelete= true retentionDays= 7 purgeProtection= true publicAccess= Enabled
+  key: kty= RSA enabled= true ops= sign,verify,wrapKey,unwrapKey,encrypt,decrypt
+  role assignments on the vault:
+    Key Vault Crypto Officer User
+    Key Vault Crypto Service Encryption User ServicePrincipal
+  activity log, storage account writes in the last 30 min (the failed CMK save should appear as Failed; may lag):
+    13:06:33 Microsoft.Storage/storageAccounts/write Succeeded 
+    13:06:34 Microsoft.Storage/storageAccounts/write Failed {"error":{"code":"KeyVaultAuthenticationFailure","message":"The operation failed because of authentication issue on the keyvault. For more information, see - https://aka.ms/storagekeyvaultaccesspolicy"}}
+--- 10. reads after switching to CMK (prediction: both still 200; data is not re-encrypted, only the wrapping key changes) ---
+  probe1 (account default -> now CMK)        -> HTTP 200
+  doc1 (scopefinance, Microsoft-managed key) -> HTTP 409 EncryptionScopeNotAvailable
+  leak check (should be 0): 0
+--- 11. key revocation test (13:10:05) ---
+  baseline: key enabled=true | probe1 (CMK) -> HTTP 200 | doc1 (scope, MMK) -> HTTP 409 EncryptionScopeNotAvailable
+  +    3s key enabled=true | probe1 (CMK) -> HTTP 200 | doc1 (scope, MMK) -> HTTP 409 EncryptionScopeNotAvailable
+  +  103s key enabled=false | probe1 (CMK) -> HTTP 200 | doc1 (scope, MMK) -> HTTP 409 EncryptionScopeNotAvailable
+  key disabled at 13:11:51 (detected); waiting for probe1 to fail (prediction: fails after a delay; doc1 stays 200)
+  +    3s key enabled=false | probe1 (CMK) -> HTTP 200 | doc1 (scope, MMK) -> HTTP 409 EncryptionScopeNotAvailable
+  +  137s key enabled=false | probe1 (CMK) -> HTTP 200 | doc1 (scope, MMK) -> HTTP 200
+  +  171s key enabled=false | probe1 (CMK) -> HTTP 403 KeyVaultEncryptionKeyNotFound | doc1 (scope, MMK) -> HTTP 200
+  probe1 blocked 171 s after the key was disabled
+  write to the CMK-encrypted container while the key is disabled: exit=1 ERROR: The key vault key is not found to unwrap the encryption key.
+  account view now: keySource= Microsoft.Keyvault provisioningState= Succeeded
+  +    3s key enabled=false | probe1 (CMK) -> HTTP 403 KeyVaultEncryptionKeyNotFound | doc1 (scope, MMK) -> HTTP 200
+  +   36s key enabled=true | probe1 (CMK) -> HTTP 403 KeyVaultEncryptionKeyNotFound | doc1 (scope, MMK) -> HTTP 200
+  key re-enabled at 13:15:22 (detected); waiting for probe1 to recover
+  +    3s key enabled=true | probe1 (CMK) -> HTTP 403 KeyVaultEncryptionKeyNotFound | doc1 (scope, MMK) -> HTTP 200
+  +  500s key enabled=true | probe1 (CMK) -> HTTP 403 KeyVaultEncryptionKeyNotFound | doc1 (scope, MMK) -> HTTP 409 EncryptionScopeNotAvailable
+  +  534s key enabled=true | probe1 (CMK) -> HTTP 403 KeyVaultEncryptionKeyNotFound | doc1 (scope, MMK) -> HTTP 200
+  +  567s key enabled=true | probe1 (CMK) -> HTTP 200 | doc1 (scope, MMK) -> HTTP 200
+  probe1 readable again 567 s after the key was re-enabled
+  leak check (should be 0): 0
+--- 12. findings (customer-managed key) ---
+  Predictions recorded before the test: (1) saving the CMK before the storage identity has a vault role fails; (2) after the role, it saves and existing blobs stay readable; (3) disabling the key blocks account-default blobs after a delay, scope blobs with a Microsoft-managed key stay readable; (4) re-enabling restores access. All held.
+  F9: planned failure: portal "Failed to update stl7srcjj1106 - The operation failed because of authentication issue on the keyvault." Activity log: storageAccounts/write Failed KeyVaultAuthenticationFailure at 13:06:34 (the identity was enabled by the write at 13:06:33).
+  F10: fix: Key Vault Crypto Service Encryption User for the storage account system-assigned identity on kv-l7-jj1106, then the save succeeded. keyVersion empty = automatic key version updates; the vault has RBAC, soft delete 7 days and purge protection (required for CMK). Jeff needed Key Vault Crypto Officer to create the key (Owner has no data actions).
+  F11: after switching to CMK, probe1 (written under the Microsoft-managed key) stayed readable: the data is not re-encrypted; only the wrapping key changes.
+  F12: key disabled in the portal (detected 13:11:51): probe1 returned 403 KeyVaultEncryptionKeyNotFound after 171 s; a write failed with "The key vault key is not found to unwrap the encryption key." The account still showed provisioningState Succeeded: the control plane gives no signal.
+  F13: doc1 (scopefinance, Microsoft-managed key) stayed readable while the account CMK was disabled: a scope with its own key is independent of the account key.
+  F14: key re-enabled (detected 13:15:22): probe1 readable again after 567 s (~9.5 min). CMK: ~3 min to revoke, ~9.5 min to restore. Encryption scope (M3a): ~12 min to revoke, under 1 min to restore. Re-enabling a CMK means about 10 min of continued outage.
+  F15: scopefinance flapped after it was re-enabled at 12:53:43 (200 by +53 s): doc1 returned 409 EncryptionScopeNotAvailable again at ~13:09 (section 10), 13:10-13:14 and ~13:23, with 200 in between. Hypothesis (not confirmed): the state propagates unevenly across storage front ends. Lesson: after re-enabling, verify over several minutes, not with one success.
+  F16: my section 9 query --query "to_string(...)" had no spaces, so PowerShell passed it unquoted to az.cmd and cmd broke on the parentheses ("-o was unexpected at this time"), echoing the command line into this file; and my mask rendered principalId as "/<id>". Cosmetic; no secret printed.
+  RESULT M3b: CMK in Key Vault through the account managed identity; planned access failure diagnosed and fixed; key revocation blocks data within ~3 min and recovery takes ~9.5 min; scope data with its own key unaffected.

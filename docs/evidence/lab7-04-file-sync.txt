@@ -1,0 +1,116 @@
+=== Lab 7 M4: Azure File Sync, 2026-11-06 13:27 ===
+--- 1. register Microsoft.StorageSync (subscription-level; free) ---
+  before: NotRegistered
+  register exit=0 after 74 s; state: Registered
+--- 2. built in the portal ---
+  share syncshare: tier= TransactionOptimized quotaGiB= 102400
+  recovery services vaults in rg-storage-lab (expect 0; backup unchecked): 1  locks: 1
+  storage sync service: sss-lab7 location=eastus provisioningState=Succeeded incomingTraffic=AllowAllTraffic
+  sync group: sg-lab7 syncGroupStatus=0
+    cloud endpoint: share=syncshare storageAccount=stl7srcjj1106 provisioningState=Succeeded changeEnumeration=11/6/2026 6:37:19 PM
+  role assignments on the storage account for Microsoft.StorageSync (the portal should have added one):
+    Storage Account Contributor ServicePrincipal
+    Reader and Data Access ServicePrincipal
+  vm-sync01: size=Standard_B2s image=windows-22-dc-azure-edition-minimal minimal-vm-windows-server-2022-datacenter-azure-ed identity=SystemAssigned power=VM running
+  public IPs in rg-storage-lab: 0 (expect 0)
+  role assignments on sss-lab7:
+    Azure File Sync Administrator ServicePrincipal
+  leak check (should be 0): 0
+  portal messages (Jeff): "Cloud endpoint creation succeeded"; "Succeeded to grant storage sync service access to storage account stl7srcjj1106"; "Succeeded to grant storage sync service access to file share syncshare".
+  deviation: vm-sync01 uses the MINIMAL Windows Server 2022 Datacenter Azure Edition image (offer windows-22-dc-azure-edition-minimal); supported by File Sync.
+--- 3. unplanned backup: vault, lock, protected items (read-only) ---
+  vaults: vault-mw5b5na1
+  vault-mw5b5na1: soft delete=  storage redundancy=GeoRedundant
+    item= | syncshare | state= | IRPending | policy= | null | lastBackup= | IRPending | container= | StorageContainer;Storage;rg-storage-lab;stl7srcjj1106
+    policy= | HourlyLogBackup | type= | AzureWorkload
+    policy= | DefaultPolicy | type= | AzureIaasVM
+    policy= | EnhancedPolicy | type= | AzureIaasVM
+    policy= | DailyPolicy-mw5b5ng8 | type= | AzureStorage
+  activity log, Recovery Services / lock writes in the last 2 h (may lag):
+    13:39:42 Microsoft.RecoveryServices/vaults/write Succeeded
+  leak check (should be 0): 0
+  CORRECTION (section 3): soft delete was read from an old property path and came back empty; the lock line failed on a -f formatting error. Both are read correctly below.
+--- 4. remove the unplanned backup (13:53:31) ---
+  vault vault-mw5b5na1 soft delete (properties.securitySettings.softDeleteSettings): state=Enabled retentionDays=14
+  lock: name=AzureBackupProtectionLock level=CanNotDelete on=stl7srcjj1106 notes=Auto-created by Azure Backup for storage accounts registered with a Recovery Services Vault. This lock is intended to guard against deletion of backups due to accidental deletion of the storage account.
+  a. turn off vault soft delete (otherwise deleted backup data blocks deleting the vault for 14 days)
+     exit=2; now: Enabled
+  b. stop protection and delete backup data (the file share itself is not touched)
+     syncshare: exit=0 
+     protected items left: 1
+  c. unregister the storage account from the vault
+     unregister exit=1 ERROR: (CloudInternalError) Microsoft Azure Backup encountered an internal error. Wait for a few minutes and then try the operation again. If the issue persists, please contact Microsoft support.
+     containers left: 1
+  d. delete the backup lock
+     locks left in rg-storage-lab: 0
+  e. delete the vault
+     delete exit=0 
+  verify: vaults in rg-storage-lab: 0  locks: 0  share syncshare still exists: True
+  leak check (should be 0): 0
+--- 5. verify backup removal ---
+  Recovery Services vaults subscription-wide:  (rg-backup-lab = P5, kept until Nov 15)
+  vaults in rg-storage-lab: 0  locks in rg-storage-lab: 0  locks on stl7srcjj1106: 0
+  share syncshare: syncshare
+  activity log, vault / protection / lock operations in the last 1 h (may lag):
+    13:39:42 Microsoft.RecoveryServices/vaults/write Succeeded
+    13:54:09 Microsoft.Authorization/locks/delete Succeeded
+    13:55:32 Microsoft.RecoveryServices/vaults/delete Succeeded
+  findings (backup):
+  B1: root cause (Jeff): Enable backup was left checked on the file share wizard Backup tab. Recurrence of P7 RCA-001: the wizard enables Azure Backup by default and auto-creates a Recovery Services vault (vault-mw5b5na1, 13:39:42, GeoRedundant), a DailyPolicy, and a CanNotDelete AzureBackupProtectionLock on the storage account ("Auto-created by Azure Backup ... to guard against deletion of backups").
+  B2: the share never got a recovery point (IRPending), so no backup data was lost or billed for storage.
+  B3: my soft-delete step used a CLI option that does not exist (--soft-delete-state, exit 2); soft delete stayed Enabled (14 days). Stop protection + delete data returned exit 0 but the item was still listed; unregister failed with CloudInternalError.
+  B4: despite B3, "az backup vault delete" returned exit 0 and the vault and the lock are gone (verified above; activity log lines above show what Azure recorded). My lock-delete loop found no lock, so the lock was removed by Azure as part of the backup operations, not by my block. Not confirmed which operation removed it.
+  B5: prevention: create file shares from the CLI or Bicep (no backup by default), or check the Backup tab every time; a Policy audit for Recovery Services vaults in lab resource groups would catch it.
+  leak check (should be 0): 0
+--- 6. agent install on vm-sync01 (13:58:58) ---
+  run command exit=0 after 235 s
+  vm: os=10.0.20348.0 edition=ServerTurbine installType=Server build=20348
+  vm: agent_msi_bytes=44154880
+  vm: msiexec_exit=0
+  vm: filesyncsvc=Running
+  vm: agent_file_version=23.1.0000.0
+  vm: syncdata_files=seed-from-server.txt
+--- 7. server registration with the VM managed identity (14:02:54) ---
+  run command exit=0 after 123 s
+  vm: modules=Az.Accounts 5.5.4, Az.StorageSync 2.7.1
+  vm: signed_in_as_type=ManagedService subscription_selected=True
+  vm: registered friendlyName=vm-sync01 agentVersion=23.1.0.0 serverRole=Standalone
+--- 8. Azure view: registered servers on sss-lab7 ---
+  registered servers: 1
+    vm-sync01: agent=23.1.0.0 os=10.0.20348.0 lastHeartBeat=11/6/2026 2:04:29 PM identity=
+  leak check (should be 0): 0
+  CORRECTION (section 5): "Recovery Services vaults subscription-wide" was empty, so the note "rg-backup-lab = P5" was wrong: the P5 vault is not a Recovery Services vault (listed by type below).
+  backup vaults (Microsoft.DataProtection/backupVaults) subscription-wide: rg-backup-lab/bv-backup-lab
+  B6: the activity log shows locks/delete at 13:54:09 (Azure removed AzureBackupProtectionLock during the stop-protection/unregister operations, before my lock step) and vaults/delete at 13:55:32.
+  A1: agent 23.1.0.0 installed silently from https://aka.ms/afs/agent/Server2022 (msiexec 0; 235 s including download). Edition ID ServerTurbine = Windows Server Azure Edition.
+  A2: server registered with the VM system-assigned managed identity (Connect-AzAccount -Identity; Azure File Sync Administrator on sss-lab7 only): no RDP and no interactive sign-in. The uncertain prediction (resource-level role is enough to select the subscription) held.
+--- 9. server endpoint (added in the portal) ---
+  vm-sync01: path=C:\SyncData cloudTiering=Off provisioningState=Succeeded initialDownload=NamespaceThenModifiedFiles initialUpload=Merge
+--- 10. test 1: server -> cloud (prediction: within minutes) ---
+  server: files=seed-from-server.txt,server-file-2.txt
+  both server files in the share after 2 s: .SystemShareInformation, seed-from-server.txt, server-file-2.txt
+--- 11. test 2: cloud -> server WITHOUT change detection (prediction: NOT on the server within 10 min) ---
+  uploaded cloud-direct.txt to the share: exit=0 at 14:21:02
+  + 123s server: cloud-direct=ABSENT
+  + 245s server: cloud-direct=ABSENT
+  + 367s server: cloud-direct=ABSENT
+  + 489s server: cloud-direct=ABSENT
+  + 612s server: cloud-direct=ABSENT
+  RESULT test 2: not on the server after ~10 min, as predicted
+--- 12. test 3: trigger change detection on the cloud endpoint, then poll the server ---
+  triggerChangeDetection exit=0 at 14:31:15 
+  +  92s server: cloud-direct=PRESENT content=uploaded directly to the share 2026-11-06T14:20:59.8815421-05:00
+  RESULT test 3: on the server after change detection
+  server endpoint health: combined=Healthy upload=Healthy download=Healthy lastUpload=11/6/2026 7:20:21 PM lastDownload=11/6/2026 7:20:44 PM
+  leak check (should be 0): 0
+--- 13. findings (File Sync) ---
+  Predictions recorded before the test: (1) server -> cloud within minutes; (2) a file uploaded directly to the share is NOT on the server within 10 min; (3) after triggering change detection it is. All held.
+  F1: server -> cloud: seed-from-server.txt (written at agent install) uploaded in the initial sync (lastUpload 14:20:21 ET); server-file-2.txt was in the share about 35 s after it was written (Run Command time included).
+  F2: cloud -> server: cloud-direct.txt uploaded straight to the share at 14:21:02 was still ABSENT on the server after 612 s. Servers only learn about changes made directly in the Azure file share through the cloud change detection job (docs: up to 24 h).
+  F3: triggerChangeDetection (REST POST on the cloud endpoint, Recursive) at 14:31:15: the file was on the server 92 s later with the correct content.
+  F4: File Sync created a .SystemShareInformation folder in the share root.
+  F5: server endpoint: C:\SyncData, cloud tiering Off (system volume; the D: temp disk is not an option), initial download NamespaceThenModifiedFiles, initial upload Merge; health Healthy (combined/upload/download).
+  F6: prevention/practice: write through the server endpoint, or run change detection (Invoke-AzStorageSyncChangeDetection / triggerChangeDetection) after changing the share directly; do not expect changes made in the share to reach servers quickly.
+  RESULT M4: Azure File Sync deployed without RDP (agent via Run Command, registration via the VM managed identity); both sync directions verified; the 24 h change-detection gap demonstrated and closed by triggering detection.
+--- 14. deallocate vm-sync01 (tests finished; 14:43:48) ---
+  deallocate exit=0; power: VM deallocated

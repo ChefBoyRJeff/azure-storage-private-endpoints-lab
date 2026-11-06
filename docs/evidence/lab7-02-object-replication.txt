@@ -1,0 +1,71 @@
+=== Lab 7 M2: object replication, 2026-11-06 12:00 ===
+--- 1. both accounts ---
+  stl7srcjj1106: location=eastus sku=Standard_LRS kind=StorageV2 hns=False crossTenantReplication=False versioning=False changeFeed=False containers=redundancy
+  stl7dstjj1106: location=westus sku=Standard_LRS kind=StorageV2 hns=False crossTenantReplication=False versioning=False changeFeed=False containers=orders, replica
+--- 2. negative test: create the policy with versioning and change feed OFF (prediction: rejected, error names the missing feature) ---
+  or-policy create exit=1
+  ERROR: (RequiredFeatureDisabled) Required feature Versioning is disabled.
+  Code: RequiredFeatureDisabled
+  Message: Required feature Versioning is disabled.
+  RESULT: rejected as predicted
+  leak check (should be 0): 0
+--- 3. policy as built in the portal (both sides) ---
+  stl7srcjj1106: policy /subscriptions/<id>/resourceGroups/rg-storage-lab/providers/Microsoft.Storage/storageAccounts/stl7srcjj1106 -> /subscriptions/<id>/resourceGroups/rg-storage-lab/providers/Microsoft.Storage/storageAccounts/stl7dstjj1106 | rule <id>: orders -> replica prefix=[inv-] minCreationTime=none (all)
+  stl7dstjj1106: policy /subscriptions/<id>/resourceGroups/rg-storage-lab/providers/Microsoft.Storage/storageAccounts/stl7srcjj1106 -> /subscriptions/<id>/resourceGroups/rg-storage-lab/providers/Microsoft.Storage/storageAccounts/stl7dstjj1106 | rule <id>: orders -> replica prefix=[inv-] minCreationTime=none (all)
+  stl7srcjj1106: versioning=True changeFeed=True
+  stl7dstjj1106: versioning=True changeFeed=False
+--- 4. upload inv-001.txt (matches prefix inv-) and tmp-001.txt (does not) to the source ---
+  inv-001 upload exit=0; tmp-001 upload exit=0 at 12:09:42
+--- 5. wait for inv-001 on the destination (every 30 s, up to 30 min) ---
+  inv-001.txt on the destination after 158 s
+  destination content: 'order 001 v1'
+  source inv-001 replication status: <id>=complete
+  destination inv-001 policy: <id>
+  destination blob list now: inv-001.txt (tmp-001.txt expected ABSENT)
+--- 6. overwrite inv-001 on the source with v2 (prediction: new version replicated) ---
+  overwrite exit=0; source versions of inv-001: 2
+  destination shows v2 after 33 s
+--- 7. delete inv-001 on the source (prediction: the destination keeps it) ---
+  source delete exit=0 at 12:13:03; waiting 3 min
+  source current blobs: tmp-001.txt
+  destination blobs after 3 min:   content of inv-001 there: ''
+--- 8. write directly to the destination container (prediction: blocked) ---
+  destination upload exit=1 ERROR: The request is rejected because of object replication policy.
+  leak check (should be 0): 0
+--- 9. findings ---
+  Predictions recorded before the test: (1) policy rejected without versioning/change feed; (2) inv- copied, tmp- not; (3) overwrite copied; (4) a delete on the source is NOT copied; (5) direct write to the destination blocked.
+  F1: prediction 1 held: RequiredFeatureDisabled, "Required feature Versioning is disabled." (CLI, on the destination).
+  F2: prediction 2 held: inv-001.txt on the destination after 158 s, source status complete; tmp-001.txt (outside prefix inv-) never copied.
+  F3: prediction 3 held: overwrite with v2 reached the destination after 33 s; the source kept 2 versions.
+  F4: prediction 4 was WRONG: inv-001 disappeared from the destination within 3 min of the source delete. Microsoft docs: "When you delete a blob in the source account, the current version of the blob becomes a previous version, and there's no longer a current version ... The service replicates this state to the destination account." Object replication is not a backup against deletes. Verified with versions in section 10.
+  F5: prediction 5 held: "The request is rejected because of object replication policy." (docs: writes to a destination container fail with 409; reads and deletes are allowed).
+  F6: the policy is created on both accounts with the same policy ID; the destination does not need change feed (changeFeed=False), only versioning.
+  F7: section 1 showed container orders on the DESTINATION account (created there by mistake during the portal build); it is empty and is deleted in section 10.
+--- 10. delete behavior: versions of inv-001.txt on both sides ---
+  stl7srcjj1106/orders: versions=2 current=0
+    version 11/6/2026 5:09:41 PM isCurrent=False
+    version 11/6/2026 5:12:29 PM isCurrent=False
+  stl7dstjj1106/replica: versions=2 current=0
+    version 11/6/2026 5:12:12 PM isCurrent=False
+    version 11/6/2026 5:12:31 PM isCurrent=False
+--- 11. recover: restore the latest previous version ON THE SOURCE; replication should bring it back on the destination ---
+  download version 11/06/2026 17:12:29 exit=1 content=''
+  re-upload as current version exit=1 at 12:22:22
+  CORRECTION: sections 10-11 above read version IDs through ConvertFrom-Json, which in PowerShell 7 turns ISO timestamps into DateTime values. The versions are shown as local dates, and the restore in section 11 sent "11/06/2026 17:12:29" as the version ID (InvalidQueryParameterValue); nothing was restored. The block was stopped with Ctrl+C. Section 10's counts are still correct.
+--- 11b. recover (re-run, version IDs read as plain text) ---
+  stl7srcjj1106/orders: versions=2 current=0 ids=2026-11-06T17:09:41.4043474Z, 2026-11-06T17:12:29.5157265Z
+  stl7dstjj1106/replica: versions=2 current=0 ids=2026-11-06T17:12:12.9005988Z, 2026-11-06T17:12:31.1344388Z
+  download version 2026-11-06T17:12:29.5157265Z exit=0 content='order 001 v2'
+  re-upload as the current version exit=0 at 12:27:52
+  destination has a current inv-001 again after 95 s: 'order 001 v2'
+  stl7srcjj1106/orders: versions=3 current=1
+  stl7dstjj1106/replica: versions=3 current=1
+--- 12. cleanup: delete the stray empty container orders on the destination account ---
+  deleted (was empty): exit=0
+  destination containers now: replica
+  F8: the destination keeps its own version IDs (different from the source's), matching the docs: "The service doesn't copy a blob's version ID ... it assigns a new version ID."
+  RESULT M2: replication works with a prefix filter; overwrites and deletes are both replicated; recovery from a delete comes from previous versions (restored on the source and replicated again), not from the replica.
+  leak check (should be 0): 0
+  CORRECTION (section 12): the line "deleted (was empty): exit=0" is wrong. The container orders no longer existed on the destination (ContainerNotFound), yet az storage container delete returned exit 0, and the blob list on a missing container returned nothing, so the count was 0. How it was removed before cleanup is recorded in the findings. Lesson (again): an exit code of 0 is not proof.
+  F9: the M2 restore worked: the previous source version (order 001 v2) re-uploaded as current at 12:27:52; the destination had a current inv-001 again after 95 s; both sides show 3 versions, 1 current.
+  F10: the stray container orders on the destination was deleted by Jeff before the cleanup step (confirmed). The cleanup step found it gone.

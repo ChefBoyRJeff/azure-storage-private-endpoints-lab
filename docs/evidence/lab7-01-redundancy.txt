@@ -1,0 +1,43 @@
+=== Lab 7 M1: storage redundancy, 2026-11-06 10:58 ===
+--- 1. account as built in the portal ---
+  stl7srcjj1106: sku=Standard_LRS kind=StorageV2 location=eastus secondaryLocation=none statusOfSecondary=none minTls=TLS1_2 httpsOnly=True anonymousBlob=False sharedKey=True
+  secondary blob endpoint reported: none
+  versioning=False changeFeed=False blobSoftDelete=True
+--- 2. upload a 1 MB random probe blob with Entra ID (Storage Blob Data Contributor) ---
+  uploaded probe1.bin at 10:58:15; local sha256 prefix=BF5ADECC571CAEAC
+  primary   GET -> HTTP 200  sha256=BF5ADECC571CAEAC (matches)
+--- 3. negative test: secondary endpoint while LRS (prediction: fails) ---
+  secondary GET -> HTTP 0 No such host is known. (stl7srcjj1106-secondary.blob.core.windows.net:443)
+  DNS stl7srcjj1106-secondary: stl7srcjj1106-secondary.blob.core.windows.net : DNS name does not exist.
+  geoReplicationStats while LRS: exit=1 ERROR: (InvalidAccountType) AccountType Standard_LRS is invalid. Code: InvalidAccountType Message: AccountType Standard_LRS is invalid.
+  leak check (should be 0): 0
+--- 4. after the change to RA-GRS (10:59:58) ---
+  sku=Standard_RAGRS secondaryLocation=westus statusOfSecondary=available secondary blob endpoint=https://stl7srcjj1106-secondary.blob.core.windows.net/
+  activity log (storage account writes, last 30 min; may lag):
+    10:56:12 Microsoft.Storage/storageAccounts/write Succeeded
+--- 5. wait for geo-replication and the existing blob on the secondary (every 30 s, up to 30 min) ---
+  +    3s geo status= lastSync=none canFailover= | secondary GET probe1 -> 0 No such host is known. (stl7srcjj1106-secondary.blob.core.windows.net:443)
+  +1,499s geo status=Bootstrap lastSync=10:55:52 canFailover=False | secondary GET probe1 -> 200 
+  RESULT: probe1 readable on the secondary; sha256 secondary=BF5ADECC571CAEAC primary=BF5ADECC571CAEAC (same content)
+--- 6. negative test: write to the secondary (prediction: rejected, read-only) ---
+  secondary PUT -> HTTP 403 InsufficientAccountPermissions
+--- 7. replication lag for a NEW blob: upload probe2, poll the secondary every 15 s (up to 20 min) ---
+  upload exit=0 at 11:25:06
+  probe2 on secondary after 17 s (HTTP 200); geo lastSync now 10:55:52
+  leak check (should be 0): 0
+--- 8. back to LRS (11:51:03) ---
+  sku=Standard_LRS secondaryLocation=none statusOfSecondary=none secondary blob endpoint=none
+  primary   GET probe1 -> HTTP 200 
+  secondary GET probe1 -> No such host is known. (stl7srcjj1106-secondary.blob.core.windows.net:443)
+  blobs on the primary: probe1.bin, probe2.bin
+  leak check (should be 0): 0
+--- 9. findings ---
+  Predictions recorded before the test: (1) secondary fails while LRS; (2) after RA-GRS, geo stats show a status and last sync time, and existing blobs become readable on the secondary; (3) writes to the secondary are rejected; (4) a new blob appears on the secondary after a delay; (5) back on LRS the secondary stops working. All held.
+  F1: while LRS the secondary hostname does not exist (DNS name does not exist); geoReplicationStats returns InvalidAccountType.
+  F2: portal message on saving RA-GRS (Jeff): "Failover cannot yet be initiated because initial data synchronization from the primary to secondary region is in progress. Failover will be available when synchronization is complete."
+  F3: the account showed sku RA-GRS and secondaryLocation westus immediately (write at 10:56:12), but the -secondary hostname did not resolve and geoReplicationStats returned LastSyncTimeUnavailable for about 29 min (until ~11:25). Those CLI errors went to the console, not this file (stderr was not captured by my block).
+  F4: last sync time is a lower bound, not "latest data": it stayed 10:55:52 while probe1 (uploaded 10:58:15) and probe2 (11:25:06, on the secondary 17 s later) were already readable there. Only writes before the last sync time are guaranteed on the secondary; that is the data-loss bound for a failover. Status was Bootstrap, canFailover False.
+  F5: the secondary is read-only: PUT returned 403 InsufficientAccountPermissions (Entra token with Storage Blob Data Contributor).
+  F6: back on LRS the secondary hostname disappeared immediately; the primary kept both blobs.
+  F7: ZRS in the Redundancy dropdown (checked while the account was RA-GRS): "This following redundancy type is not available for this storage account." Hypothesis (not confirmed): the portal does not offer a direct geo -> ZRS change; conversions go LRS <-> ZRS or GRS <-> GZRS. Not tested further (a conversion can take hours to days).
+  RESULT M1: LRS -> RA-GRS -> LRS completed; secondary read verified with matching content; account is LRS again.

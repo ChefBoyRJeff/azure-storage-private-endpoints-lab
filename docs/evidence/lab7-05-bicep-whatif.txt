@@ -1,0 +1,235 @@
+--- Lab 7 M5: Bicep what-if against the live resources (2026-11-06 14:54:52) ---
+--- 1. predictions (recorded before the what-if) ---
+  W1: Ignore for vm-sync01, its NIC, NSG, VNet, OS disk and shutdown schedule (not in the template; incremental mode leaves them alone).
+  W2: no Create or Delete for the declared resources; storage accounts, sync service, sync group and cloud endpoint show NoChange or Modify with read-only/noise properties only.
+  W3: the key may show Modify noise, but per the docs an ARM PUT of an existing key is a no-op (no new version).
+  W4: the Key Vault may show an accessPolicies removal: the export holds an access policy for the source account identity although the vault is in RBAC mode.
+  W5: the source encryption may show a keyvaulturi difference (vaultUri ends with a slash; the live keyVaultUri does not).
+  W6: the source-side object replication policy (module) may not be fully evaluated, because its name is only known at deployment time.
+--- 2. bicep build (linter rules from bicepconfig.json) ---
+  bicep build exit=0
+--- 3. what-if (no deployment) ---
+Note: The result may contain false positive predictions (noise).
+You can help us improve the accuracy of the result by opening an issue here: https://aka.ms/WhatIfIssues
+NOTICE! - Want to get What-if without noise? Move to Deployment Stacks What-If https://aka.ms/stackswhatifGA
+
+Resource and property changes are indicated with these symbols:
+  - Delete
+  + Create
+  ~ Modify
+  = Nochange
+  x Unsupported
+  * Ignore
+  x Noeffect
+
+The deployment will update the following scopes:
+
+Scope: /
+
+
+
+Scope: /subscriptions/<id>/resourceGroups/RG-STORAGE-LAB
+
+  ~ Microsoft.KeyVault/vaults/kv-l7-jj1106/keys/cmk-storage [2023-07-01]
+    - properties.rotationPolicy:
+
+        lifetimeActions: [
+          0:
+
+            action.type:              "Notify"
+            trigger.timeBeforeExpiry: "P30D"
+
+        ]
+
+    + tags:
+
+        costCenter:  "CC-1001"
+        environment: "lab"
+        lab:         "lab7"
+        owner:       "jeff"
+        project:     "azure-storage-private-endpoints-lab"
+
+
+  ~ Microsoft.Storage/storageAccounts/stl7dstjj1106/blobServices/default [2025-06-01]
+    - properties.staticWebsite:
+
+        enabled: false
+
+
+  ~ Microsoft.Storage/storageAccounts/stl7srcjj1106 [2025-06-01]
+    ~ properties.encryption.keyvaultproperties.keyvaulturi: "https://kv-l7-jj1106.vault.azure.net" => "[reference('/subscriptions/<id>/resourceGroups/rg-storage-lab/providers/Microsoft.KeyVault/vaults/kv-l7-jj1106', '2023-07-01').vaultUri]"
+    x properties.encryption.services:
+
+        blob.enabled: true
+        blob.keyType: "Account"
+        file.enabled: true
+        file.keyType: "Account"
+
+
+  ~ Microsoft.Storage/storageAccounts/stl7srcjj1106/blobServices/default [2025-06-01]
+    - properties.staticWebsite:
+
+        enabled: false
+
+
+  ~ Microsoft.Storage/storageAccounts/stl7srcjj1106/fileServices/default [2025-06-01]
+    - properties.shareDeleteRetentionPolicy.days: 0
+
+  ~ Microsoft.Storage/storageAccounts/stl7srcjj1106/fileServices/default/shares/syncshare [2025-06-01]
+    - properties.metadata:
+
+        AfsShareMetadataCertificatePublicKeysUri: "/subscriptions/<id>/resourceGroups/rg-storage-lab/providers/Microsoft.StorageSync/storageSyncServices/sss-lab7/syncGroups/sg-lab7/cloudEndpoints/<id>/afssharemetadatacertificatepublickeys?api-version=2020-09-01"
+        AzureBackupProtected:                     "False"
+        PostBackupUri:                            "/subscriptions/<id>/resourceGroups/rg-storage-lab/providers/Microsoft.StorageSync/storageSyncServices/sss-lab7/syncGroups/sg-lab7/cloudEndpoints/<id>/postbackup?api-version=2020-09-01"
+        PostRestoreUri:                           "/subscriptions/<id>/resourceGroups/rg-storage-lab/providers/Microsoft.StorageSync/storageSyncServices/sss-lab7/syncGroups/sg-lab7/cloudEndpoints/<id>/postrestore?api-version=2020-09-01"
+        PreBackupUri:                             "/subscriptions/<id>/resourceGroups/rg-storage-lab/providers/Microsoft.StorageSync/storageSyncServices/sss-lab7/syncGroups/sg-lab7/cloudEndpoints/<id>/prebackup?api-version=2020-09-01"
+        PreRestoreUri:                            "/subscriptions/<id>/resourceGroups/rg-storage-lab/providers/Microsoft.StorageSync/storageSyncServices/sss-lab7/syncGroups/sg-lab7/cloudEndpoints/<id>/prerestore?api-version=2020-09-01"
+        RestoreHeartBeatUri:                      "/subscriptions/<id>/resourceGroups/rg-storage-lab/providers/Microsoft.StorageSync/storageSyncServices/sss-lab7/syncGroups/sg-lab7/cloudEndpoints/<id>/restoreheartbeat?api-version=2020-09-01"
+        SyncGroup:                                "sg-lab7"
+        SyncService:                              "sss-lab7"
+        SyncSignature:                            "<redacted>"
+
+    - properties.signedIdentifiers: [
+        0:
+
+          accessPolicy.permission: "r"
+          id:                      "GhostedRecall"
+
+      ]
+
+  ~ Microsoft.StorageSync/storageSyncServices/sss-lab7 [2022-09-01]
+    - properties.useIdentity: true
+
+  = Microsoft.KeyVault/vaults/kv-l7-jj1106 [2023-07-01]
+  = Microsoft.Storage/storageAccounts/stl7dstjj1106 [2025-06-01]
+    x properties.encryption.services:
+
+        blob.enabled: true
+        blob.keyType: "Account"
+        file.enabled: true
+        file.keyType: "Account"
+
+
+  = Microsoft.Storage/storageAccounts/stl7dstjj1106/blobServices/default/containers/replica [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stl7dstjj1106/objectReplicationPolicies/<id> [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stl7srcjj1106/blobServices/default/containers/finance [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stl7srcjj1106/blobServices/default/containers/orders [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stl7srcjj1106/blobServices/default/containers/redundancy [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stl7srcjj1106/encryptionScopes/scopefinance [2025-06-01]
+  = Microsoft.StorageSync/storageSyncServices/sss-lab7/syncGroups/sg-lab7 [2022-09-01]
+  = Microsoft.StorageSync/storageSyncServices/sss-lab7/syncGroups/sg-lab7/cloudEndpoints/<id> [2022-09-01]
+  * Microsoft.Compute/disks/vm-sync01_OsDisk_1_<id>
+  * Microsoft.Compute/virtualMachines/vm-sync01
+  * Microsoft.DevTestLab/schedules/shutdown-computevm-vm-sync01
+  * Microsoft.Network/networkInterfaces/vm-sync01323
+  * Microsoft.Network/networkSecurityGroups/vm-sync01-nsg
+  * Microsoft.Network/virtualNetworks/vnet-sync
+
+Resource changes: 7 to modify, 10 no change, 1 unsupported, 6 to ignore.
+
+Diagnostics (1): 
+[resourceId('<id>', 'rg-storage-lab', 'Microsoft.Storage/storageAccounts/objectReplicationPolicies', filter(split(format('{0}/{1}', 'stl7srcjj1106', reference('/subscriptions/<id>/resourceGroups/rg-storage-lab/providers/Microsoft.Storage/storageAccounts/stl7dstjj1106/objectReplicationPolicies/<id>', '2025-06-01').policyId), '/'), lambda('x', not(empty(lambdaVariables('x')))))[0], filter(split(format('{0}/{1}', 'stl7srcjj1106', reference('/subscriptions/<id>/resourceGroups/rg-storage-lab/providers/Microsoft.Storage/storageAccounts/stl7dstjj1106/objectReplicationPolicies/<id>', '2025-06-01').policyId), '/'), lambda('x', not(empty(lambdaVariables('x')))))[1])] (Unsupported) Changes to the resource declared at 'properties.template.resources[16].properties.template.resources[0]' on line 1 and column 15112 cannot be analyzed because its resource ID or API version cannot be calculated until the deployment is under way. Please see https://aka.ms/WhatIfUnidentifiableResource for more guidance.
+
+  what-if exit=0
+--- 4. run 1 review ---
+  SyncSignature (File Sync share metadata) redacted from run 1 above before publishing (verified: one line, value <redacted>).
+  W1 held: 6 to ignore (VM, NIC, NSG, VNet, OS disk, shutdown schedule).
+  W2 partly held: no Create or Delete, but the 7 Modify included real drift: sss properties.useIdentity removal and the key rotationPolicy removal.
+  W3 partly held: the key showed Modify (rotationPolicy removal, tags added). Docs say an ARM PUT of an existing key performs no write, but what-if does not model that; not tested by deploying.
+  W4 WRONG: the Key Vault showed NoChange; no accessPolicies removal was listed.
+  W5 WRONG cause: the keyvaulturi difference was the unevaluated reference() expression for a vault declared in the same template, not the trailing slash.
+  W6 held: the source-side object replication policy is Unsupported (resource ID only known during deployment), 1 diagnostic.
+  R1 (hazard): the syncshare share carries metadata written by File Sync (AfsShareMetadata/backup/restore URIs, SyncGroup, SyncService, SyncSignature) and a GhostedRecall stored access policy (r). Undeclared, a redeploy would remove them.
+  FIXES: useIdentity true declared on sss; key rotationPolicy declared (notify P30D) and key tags dropped; keyvaulturi built from the vault name + environment().suffixes.keyvaultDns; deployShare param (false once File Sync owns the share).
+  ACCEPTED NOISE: blobServices staticWebsite removal (not in the ARM schema, BCP037 when declared); fileServices shareDeleteRetentionPolicy.days 0 (API returns 0 when disabled, schema minimum is 1); encryption.services listed as Noeffect. The empty "Scope: /" block listed no changes; cause not investigated.
+--- 5. run 2 predictions (recorded before the what-if) ---
+  X1: 6 to ignore, unchanged.
+  X2: the key shows NoChange (at most case noise on notify/Notify).
+  X3: the source account no longer lists keyvaulturi; only encryption.services Noeffect.
+  X4: sss-lab7 shows NoChange.
+  X5: the syncshare share is not listed (deployShare=false).
+  X6: the only Modify left: staticWebsite on both blob services and shareDeleteRetentionPolicy.days on the file service (3 to modify).
+  X7: the source-side object replication policy is still Unsupported.
+--- 6. bicep build (run 2) ---
+  bicep build exit=0
+--- 7. what-if run 2 (no deployment; 14:59:35) ---
+Note: The result may contain false positive predictions (noise).
+You can help us improve the accuracy of the result by opening an issue here: https://aka.ms/WhatIfIssues
+NOTICE! - Want to get What-if without noise? Move to Deployment Stacks What-If https://aka.ms/stackswhatifGA
+
+Resource and property changes are indicated with these symbols:
+  - Delete
+  ~ Modify
+  = Nochange
+  x Unsupported
+  * Ignore
+  x Noeffect
+
+The deployment will update the following scopes:
+
+Scope: /
+
+
+
+Scope: /subscriptions/<id>/resourceGroups/RG-STORAGE-LAB
+
+  ~ Microsoft.Storage/storageAccounts/stl7dstjj1106/blobServices/default [2025-06-01]
+    - properties.staticWebsite:
+
+        enabled: false
+
+
+  ~ Microsoft.Storage/storageAccounts/stl7srcjj1106/blobServices/default [2025-06-01]
+    - properties.staticWebsite:
+
+        enabled: false
+
+
+  ~ Microsoft.Storage/storageAccounts/stl7srcjj1106/fileServices/default [2025-06-01]
+    - properties.shareDeleteRetentionPolicy.days: 0
+
+  = Microsoft.KeyVault/vaults/kv-l7-jj1106 [2023-07-01]
+  = Microsoft.KeyVault/vaults/kv-l7-jj1106/keys/cmk-storage [2023-07-01]
+  = Microsoft.Storage/storageAccounts/stl7dstjj1106 [2025-06-01]
+    x properties.encryption.services:
+
+        blob.enabled: true
+        blob.keyType: "Account"
+        file.enabled: true
+        file.keyType: "Account"
+
+
+  = Microsoft.Storage/storageAccounts/stl7dstjj1106/blobServices/default/containers/replica [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stl7dstjj1106/objectReplicationPolicies/<id> [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stl7srcjj1106 [2025-06-01]
+    x properties.encryption.services:
+
+        blob.enabled: true
+        blob.keyType: "Account"
+        file.enabled: true
+        file.keyType: "Account"
+
+
+  = Microsoft.Storage/storageAccounts/stl7srcjj1106/blobServices/default/containers/finance [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stl7srcjj1106/blobServices/default/containers/orders [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stl7srcjj1106/blobServices/default/containers/redundancy [2025-06-01]
+  = Microsoft.Storage/storageAccounts/stl7srcjj1106/encryptionScopes/scopefinance [2025-06-01]
+  = Microsoft.StorageSync/storageSyncServices/sss-lab7 [2022-09-01]
+  = Microsoft.StorageSync/storageSyncServices/sss-lab7/syncGroups/sg-lab7 [2022-09-01]
+  = Microsoft.StorageSync/storageSyncServices/sss-lab7/syncGroups/sg-lab7/cloudEndpoints/<id> [2022-09-01]
+  * Microsoft.Compute/disks/vm-sync01_OsDisk_1_<id>
+  * Microsoft.Compute/virtualMachines/vm-sync01
+  * Microsoft.DevTestLab/schedules/shutdown-computevm-vm-sync01
+  * Microsoft.Network/networkInterfaces/vm-sync01323
+  * Microsoft.Network/networkSecurityGroups/vm-sync01-nsg
+  * Microsoft.Network/virtualNetworks/vnet-sync
+
+Resource changes: 3 to modify, 13 no change, 1 unsupported, 6 to ignore.
+
+Diagnostics (1): 
+[resourceId('<id>', 'rg-storage-lab', 'Microsoft.Storage/storageAccounts/objectReplicationPolicies', filter(split(format('{0}/{1}', 'stl7srcjj1106', reference('/subscriptions/<id>/resourceGroups/rg-storage-lab/providers/Microsoft.Storage/storageAccounts/stl7dstjj1106/objectReplicationPolicies/<id>', '2025-06-01').policyId), '/'), lambda('x', not(empty(lambdaVariables('x')))))[0], filter(split(format('{0}/{1}', 'stl7srcjj1106', reference('/subscriptions/<id>/resourceGroups/rg-storage-lab/providers/Microsoft.Storage/storageAccounts/stl7dstjj1106/objectReplicationPolicies/<id>', '2025-06-01').policyId), '/'), lambda('x', not(empty(lambdaVariables('x')))))[1])] (Unsupported) Changes to the resource declared at 'properties.template.resources[16].properties.template.resources[0]' on line 1 and column 15492 cannot be analyzed because its resource ID or API version cannot be calculated until the deployment is under way. Please see https://aka.ms/WhatIfUnidentifiableResource for more guidance.
+
+  what-if exit=0
+--- 8. run 2 review ---
+  X1-X7 all held: 3 to modify (staticWebsite x2, shareDeleteRetentionPolicy.days - accepted noise), 13 no change, 1 unsupported (source OR policy in the module), 6 to ignore.
+  RESULT M5 (Bicep): storage-extras.bicep matches the live Lab 7 resources except documented noise; real drift found in run 1 (useIdentity, rotationPolicy, File Sync share metadata) fixed or guarded.

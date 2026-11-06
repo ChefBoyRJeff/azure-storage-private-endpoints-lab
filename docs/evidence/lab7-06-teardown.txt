@@ -1,0 +1,37 @@
+--- Lab 7 teardown (2026-11-06 14:59:56) ---
+  Order: server endpoint -> cloud endpoint -> sync group -> registered server -> resource group delete.
+  locks on rg-storage-lab: 0
+--- 1. server endpoint ---
+  server endpoint found: 1
+  server endpoint delete: gone=False (15:11:11)
+  STOP: server endpoint still present after 10 min.
+--- 1b. diagnosis: server endpoint delete did not complete (16:43:55) ---
+  Symptom: DELETE on the server endpoint accepted, but the resource was still present after 10 min (14:59:56-15:11:11).
+  Hypothesis (recorded before checking): the delete is a job the File Sync agent must run; vm-sync01 was deallocated at 14:43:48, so the job cannot run. Docs: MgmtServerJobExpired when the server is offline; fix = unregister the server (cascading delete of its server endpoints).
+  server endpoint provisioningState: Canceled
+  server endpoint lastOperationName: IDeleteServerEndpointWorkflow3
+  workflow operation: Do
+  workflow status: Aborted
+  workflow lastStepName: deleteServerEndpointOnServer
+  registered server lastHeartBeat: 2026-11-06T19:40:15.057275Z
+  registered server agentVersion: 23.1.0.0
+  vm-sync01 power: VM deallocated
+--- 1c. remediation: unregister the server in the portal ---
+  after unregister: registered servers=0, server endpoints=0 (16:45:37)
+--- 2. cloud endpoint ---
+  cloud endpoint found: 1
+  cloud endpoint delete: gone=True (16:46:48)
+--- 3. sync group ---
+  sync group found: 1
+  sync group delete: gone=True (16:46:51)
+--- 5. delete rg-storage-lab (started 16:46:51) ---
+  group delete exit=0 (finished 16:48:55)
+--- 6. subscription-wide verification ---
+  rg-storage-lab exists: false
+  storage sync services left: 0
+  stl7 storage accounts left: 0
+  Recovery Services vaults: 0 (expected 0)
+  Backup vaults (DataProtection): bv-backup-lab (expected only bv-backup-lab from P5)
+  vm-sync01 OS disks left: 0
+  kv-l7-jj1106 soft-deleted, purge scheduled: 2026-11-13T21:46:59+00:00 (purge protection: name reserved until then, no charge)
+  RESULT: Lab 7 resources removed.

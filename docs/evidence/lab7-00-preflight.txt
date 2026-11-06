@@ -1,0 +1,65 @@
+=== Lab 7: storage extras preflight (read-only), 2026-11-06 10:43 ===
+--- 1. repo state ---
+  1f9bbcb M6e: final teardown - data roles removed, rg-storage-lab deleted, verified; budget kept until charges post
+  a0ea0b1 M6: Bicep from live export (storage, services, containers, share, lifecycle, optional PE module); what-if drift fix (share soft delete) and noise triage; README, plan outcomes, interview guide
+  82bd4b9 M5: AzCopy via Entra (az CLI token); Reader upload denied 403 (job Cancelled); container-scoped Contributor fix; S2S copy; sync dry run + exclude-path; Storage Explorer bypassed RBAC via account keys
+  uncommitted: 1 item(s) (this new evidence file not counted yet)
+--- 2. account ---
+  subscription: AZ104_PracticeSubscription  state: Enabled
+--- 3. leftovers (subscription-wide; disks via az resource list because az disk list needs -g) ---
+  rg-storage-lab exists: false
+  Microsoft.Compute/virtualMachines            0
+  Microsoft.Compute/disks                      0
+  Microsoft.Compute/snapshots                  0
+  Microsoft.Storage/storageAccounts            0
+  Microsoft.KeyVault/vaults                    0
+  Microsoft.StorageSync/storageSyncServices    0
+  Microsoft.Network/privateEndpoints           0
+  Microsoft.Network/publicIPAddresses          0
+  soft-deleted key vaults: 0
+  resource group: rg-hubspoke-lab
+  resource group: NetworkWatcherRG
+  resource group: rg-monitoring-lab
+  resource group: rg-cicd-dev
+  resource group: rg-cicd-prod
+  resource group: rg-backup-lab
+  resource group: DefaultResourceGroup-EUS
+--- 4. resource providers ---
+  Microsoft.Storage      Registered
+  Microsoft.KeyVault     Registered
+  Microsoft.StorageSync  NotRegistered
+  Microsoft.Compute      Registered
+--- 5. regions: East US pair (RA-GRS secondary) ---
+  eastus paired region: westus
+--- 6. proposed names (globally unique; checked, not created) ---
+  storage stl7srcjj1106: available=True 
+  storage stl7dstjj1106: available=True 
+  key vault kv-l7-jj1106: available=True 
+--- 7. Windows VM size for M4 (eastus) and quota ---
+  Standard_B2s   vCPU=2 memGB=4 restrictions=Zone:NotAvailableForSubscription:2
+  Standard_B2ms  vCPU=2 memGB=8 restrictions=Zone:NotAvailableForSubscription:2
+  Total Regional vCPUs: 0 of 10
+  Standard BS Family vCPUs: 0 of 10
+--- 8. my data-plane roles (expect none for Key Vault; Owner has no dataActions) ---
+  Owner at subscriptions/<id>
+  User Access Administrator at /
+--- 9. prices (Retail Prices API, eastus) ---
+  Blob v2 | Hot GRS Data Stored | 0.0458 per 1 GB/Month
+  Blob v2 | Hot LRS Data Stored | 0.0208 per 1 GB/Month
+  Blob v2 | Hot RA-GRS Data Stored | 0.0589 per 1 GB/Month
+  Blob v2 | Hot ZRS Data Stored | 0.026 per 1 GB/Month
+  Storage - Bandwidth | Geo-Replication Data Transfer | 0 per 1 GB
+  Storage - Bandwidth | Geo-Replication v2 Data Transfer | 0.02 per 1 GB
+  Key Vault | Standard | Operations | 0.03 per 10K
+  Key Vault | Standard | Secret Renewal | 1 per 1
+  Key Vault | Standard | Automated Key Rotation | 1 per 1 Rotation
+  Key Vault | Premium | Operations | 0.03 per 10K
+  Azure File Sync: no meter found with this filter (recorded, not guessed)
+  Virtual Machines BS Series | B2s | 0.0416 per 1 Hour
+  Virtual Machines BS Series Windows | B2s | 0.0496 per 1 Hour
+--- 10. budgets ---
+  budget budget-az104-lab: spent 2.2855394890839023 of 10.0
+  budget budget-backup-dr-lab: spent 0.1573434 of 5.0
+  budget budget-compute-hosting-lab: spent 0.3839049979755818 of 5.0
+  budget budget-storage-pe-lab: spent 0.0623624513794723 of 5.0
+  leak check (should be 0): 0

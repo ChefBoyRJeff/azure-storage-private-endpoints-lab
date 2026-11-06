@@ -1,6 +1,6 @@
 # Project 7 Plan: Azure Storage + Private Endpoints Lab
 
-**Status:** Plan approved 2026-11-03. M0 in progress.
+**Status:** M0-M6 complete (2026-11-03 to 11-04). Lab 7 (storage extras) complete 2026-11-06. Everything torn down.
 
 ## Business Problem
 
@@ -54,3 +54,24 @@ Price lookup findings (M0): the API response field is `type`, not `priceType` (t
 - Standing approval (as in P6) for lab changes and deletions inside `rg-storage-lab`. Changes to P1's resource group are made through P1's Bicep, reviewed with what-if first.
 - No account keys or SAS tokens in chat or Git; evidence masks keys, tokens, account hostnames where needed, subscription IDs, GUIDs and IPs.
 - VM deallocated or deleted at the end of each session.
+
+## Lab 7: storage extras (2026-11-06)
+
+Scope: AZ-104 storage objectives not covered in M0-M6. New resource group `rg-storage-lab` (the M6 one had been deleted), source account in East US, destination in West US (the East US pair).
+
+| # | Milestone | Acceptance criteria | Planned failure / prediction | Outcome |
+|---|---|---|---|---|
+| M0 | Preflight | Repo clean, no leftovers, providers, names, prices | — | Done. `Microsoft.StorageSync` was NotRegistered (registered in M4, free). No File Sync meter found in the price lookup. |
+| M1 | Redundancy | LRS -> RA-GRS -> LRS; secondary read verified | Secondary fails while LRS; secondary write rejected | All 5 predictions held. The secondary appeared about 29 min after the change; `lastSyncTime` is a lower bound; ZRS not offered while RA-GRS (hypothesis only). |
+| M2 | Object replication | Prefix-filtered copy; overwrite; destination read-only | Policy rejected without versioning; **delete NOT replicated** | Delete prediction **wrong**: deletes replicate. Recovery from a source previous version. The PS7 `ConvertFrom-Json` date conversion broke the first restore (corrected, re-run). |
+| M3a | Encryption scope | Container default with override denied; disable blocks only scope data | Disable gives 403 | Blocked after about 12 min with **409** (not 403); flapped after re-enable. **Cost missed in the plan:** $1/scope/month, 30-day minimum. |
+| M3b | Customer-managed key | CMK via the account system identity; revoke and restore | `KeyVaultAuthenticationFailure` before the vault role | Held. Revoke in 171 s (403), restore in 567 s; the control plane showed `Succeeded` throughout. |
+| M4 | Azure File Sync | Agent, registration, both sync directions, change detection | Direct share change not on the server within 10 min | Held (612 s absent, 92 s after detection). **RCA-003**: backup auto-enabled again. |
+| M5 | Bicep, what-if, teardown, docs | What-if shows only documented noise; nothing left billing | — | Run 1: 3 real issues fixed (`useIdentity`, rotation policy, `deployShare` guard). Run 2: noise only. **RCA-004**: server endpoint delete aborted with the VM off; fixed by unregistering. RG deleted and verified. |
+
+Deviations:
+- The VM used the minimal Windows Server 2022 Azure Edition image (supported by File Sync).
+- The ZRS conversion wasn't attempted: it can take hours to days, and the portal didn't offer it from RA-GRS.
+- Evidence fixes were appended as CORRECTION lines, never rewritten. One exception: a File Sync `SyncSignature` value captured by what-if run 1 was **redacted** in place before publishing.
+
+Cost: the encryption scope (about $1) dominates. The VM ran about 1 h at $0.0496/h. Check actual charges by resource group after billing posts (budget `budget-az104-lab` showed $2.29 of $10 at preflight, mostly earlier labs).

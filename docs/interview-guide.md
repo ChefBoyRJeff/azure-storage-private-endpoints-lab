@@ -68,3 +68,43 @@ A: It can show noise (properties the API returns but you didn't set), and it doe
 - How would you give on-premises users access to the private endpoint?
 - Why is `registrationEnabled` false on a privatelink zone link?
 - What's the cost difference between a service endpoint and a private endpoint, and why choose the more expensive one?
+
+## Lab 7: storage extras
+
+### 2-minute walkthrough
+
+I added the storage topics the first lab skipped: redundancy, object replication, encryption scopes, a customer-managed key, and Azure File Sync.
+- **Redundancy:** I switched an account from LRS to RA-GRS and back. The secondary endpoint didn't exist for about 29 minutes. Once it did, it served matching content and refused writes with 403.
+- **Object replication:** I replicated only `inv-` blobs to West US. I predicted a delete would not be copied, and that was wrong: deletes replicate. So I recovered from a previous version on the source.
+- **Encryption:** an encryption scope took about 12 minutes to block reads after I disabled it, with a 409 rather than the 403 the docs state. Disabling the customer-managed key blocked data in about 3 minutes, and recovery took about 9.5 minutes.
+- **File Sync:** I installed the agent and registered the server with the VM's managed identity, with no RDP. I showed that a change made directly in the share doesn't reach the server until change detection runs.
+- **Code:** I codified all of it in Bicep and used what-if to find real drift. I documented two incidents: the backup default catching me a second time, and a server endpoint delete that aborted because the VM was off.
+
+### Deep-dive points
+
+- **lastSyncTime:** writes before it are guaranteed on the secondary; later writes may or may not be there. My new blob was readable on the secondary 17 s after upload, while lastSyncTime still showed a time 30 minutes earlier. It's the data-loss bound for a failover, not a freshness indicator.
+- **Object replication isn't backup:** overwrites and deletes both replicate. Protection against deletes comes from versioning and soft delete on the source.
+- **Why CMK needs two deployments from scratch:** the account's system-assigned identity exists only after the account is created, and it must hold Key Vault Crypto Service Encryption User before encryption can point at the key. Pass 1 creates the account and the role; pass 2 switches to CMK. A user-assigned identity, created first, avoids the second pass.
+- **The control plane doesn't show data-plane outages:** with the key disabled, every read failed with 403 while the account still showed `provisioningState Succeeded`. You'd alert on failed requests (storage logs or metrics), not on resource health.
+- **What-if and service-owned state:** File Sync wrote metadata and a `GhostedRecall` stored access policy onto the share. Redeploying the share from my template would have removed them, so the template has `deployShare = false` once File Sync owns it.
+
+### Likely questions
+
+**Q: You disabled a customer-managed key. What happens, and how fast?**
+A: In my lab, reads and writes on data under that key failed with 403 `KeyVaultEncryptionKeyNotFound` after about 3 minutes. The account still showed Succeeded. Data in an encryption scope with its own Microsoft-managed key stayed readable. After re-enabling the key, access came back after about 9.5 minutes, so revoking a key is fast and undoing it is slow.
+
+**Q: A user says a file they uploaded to the Azure file share hasn't appeared on the on-premises server.**
+A: That's expected. Servers learn about changes made directly in the share only through the cloud change detection job, which can take up to 24 hours. In my lab the file was still missing after 10 minutes and arrived 92 seconds after I triggered change detection. Write through the server endpoint, or run `Invoke-AzStorageSyncChangeDetection` after direct changes.
+
+**Q: You deleted a File Sync server endpoint and it never went away. Why?**
+A: The delete runs a step on the server. My VM was deallocated, and the workflow aborted at `deleteServerEndpointOnServer`. For a server that's gone or off, unregister it in the portal, which removes its endpoints. Better: delete endpoints while the server is still running, and stop compute last.
+
+**Q: Why did the backup vault appear twice?**
+A: The portal file share wizard turns on Azure Backup by default. After the first time I added a reminder, and it didn't work. What caught it both times was a scripted inventory after the change. The real fix is creating shares from code, or adding an Azure Policy audit.
+
+### Follow-ups to practice
+
+- How do you convert an RA-GRS account to ZRS or GZRS, and why didn't the portal offer it?
+- What does object replication need on the source vs the destination (versioning, change feed)?
+- How would you rotate the CMK, and what does an empty `keyVersion` mean?
+- How would cloud tiering change the File Sync teardown risk (tiered files and orphaned files)?
